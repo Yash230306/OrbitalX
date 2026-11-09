@@ -10,6 +10,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
@@ -100,7 +101,9 @@ public final class SettingsView extends View {
                 BorderFactory.createEmptyBorder(10, 14, 10, 14)));
         JLabel title = new JLabel(label);
         title.setForeground(theme.foreground()); title.setFont(title.getFont().deriveFont(Font.BOLD, 11f));
-        row.add(title, BorderLayout.WEST); row.add(control, BorderLayout.EAST);
+        JPanel controlSlot = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        controlSlot.setOpaque(false); controlSlot.add(control);
+        row.add(title, BorderLayout.WEST); row.add(controlSlot, BorderLayout.EAST);
         return row;
     }
 

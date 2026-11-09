@@ -10,6 +10,7 @@ import com.orbitalix.gui.core.View;
 import com.orbitalix.gui.core.ViewRegistry;
 import com.orbitalix.gui.core.SplashScreen;
 import com.orbitalix.gui.core.BottomTicker;
+import com.orbitalix.gui.core.KeyboardShortcuts;
 import com.orbitalix.gui.kit.ToastLayer;
 import com.orbitalix.gui.audio.SoundPlayer;
 import com.orbitalix.gui.audio.SynthSoundPlayer;
@@ -18,7 +19,6 @@ import com.orbitalix.gui.theme.Themes;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -252,36 +252,16 @@ public final class MainWindow extends JFrame {
     }
 
     private void installShortcuts(JComponent root) {
-        InputMap input = root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-        ActionMap actions = root.getActionMap();
-        input.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "play");
-        actions.put("play", new AbstractAction() { @Override public void actionPerformed(java.awt.event.ActionEvent e) { toggleRun(); } });
-        for (int i = 0; i < 10; i++) {
-            final String view = VIEWS.get((i + 1) % 10);
-            input.put(KeyStroke.getKeyStroke(KeyEvent.VK_0 + ((i + 1) % 10), 0), "view" + i);
-            actions.put("view" + i, new AbstractAction() {
-                @Override public void actionPerformed(java.awt.event.ActionEvent e) { showView(view); }
-            });
-        }
-        input.put(KeyStroke.getKeyStroke(KeyEvent.VK_K, KeyEvent.CTRL_DOWN_MASK), "focusConsole");
-        actions.put("focusConsole", new AbstractAction() {
-            @Override public void actionPerformed(java.awt.event.ActionEvent e) { showView("Console"); commandField.requestFocusInWindow(); }
-        });
-        input.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK), "screenshot");
-        actions.put("screenshot", new AbstractAction() {
-            @Override public void actionPerformed(java.awt.event.ActionEvent e) {
-                try { ScreenshotHarness.capture(Path.of("out", "screenshots"), controller); status.setText("SCREENSHOTS SAVED TO out\\screenshots"); }
-                catch (IOException ex) { status.setText("SCREENSHOT FAILED: " + ex.getMessage()); }
-            }
-        });
-        input.put(KeyStroke.getKeyStroke(KeyEvent.VK_F11, 0), "fullscreen");
-        actions.put("fullscreen", new AbstractAction() {
-            @Override public void actionPerformed(java.awt.event.ActionEvent e) { toggleFullScreen(); }
-        });
-        input.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "escape");
-        actions.put("escape", new AbstractAction() {
-            @Override public void actionPerformed(java.awt.event.ActionEvent e) { commandField.setText(""); }
-        });
+        KeyboardShortcuts.install(root, VIEWS, this::toggleRun, this::showView,
+                () -> { showView("Console"); commandField.requestFocusInWindow(); },
+                () -> {
+                    try {
+                        ScreenshotHarness.capture(Path.of("out", "screenshots"), controller);
+                        status.setText("SCREENSHOTS SAVED TO out\\screenshots");
+                    } catch (IOException ex) {
+                        status.setText("SCREENSHOT FAILED: " + ex.getMessage());
+                    }
+                }, this::toggleFullScreen, () -> commandField.setText(""));
     }
 
     private final class TopBar extends JPanel {

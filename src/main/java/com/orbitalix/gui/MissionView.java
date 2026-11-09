@@ -199,7 +199,7 @@ public class MissionView extends View {
     }
 
     private void drawLimitControls(Graphics2D g, DashboardLayout layout, int height) {
-        int y = height - 46, x = layout.cardsX(), buttonWidth = Math.max(80, (layout.cardsW() - 24) / 4);
+        int y = height - 64, x = layout.cardsX(), buttonWidth = Math.max(80, (layout.cardsW() - 24) / 4);
         for (int i = 0; i < Math.min(4, snapshot.limits().size()); i++) {
             LimitSnapshot limit = snapshot.limits().get(i);
             String name = limit.type().name().replace("MIN_", "MIN ").replace("MAX_", "MAX ");
@@ -269,13 +269,14 @@ public class MissionView extends View {
             repaint();
             return;
         }
-        if (y >= getHeight() - 50 && x >= layout.cardsX() && x < layout.cardsX() + layout.cardsW()) {
+        if (y >= getHeight() - 70 && y <= getHeight() - 40
+                && x >= layout.cardsX() && x < layout.cardsX() + layout.cardsW()) {
             int buttonWidth = Math.max(80, (layout.cardsW() - 24) / 4);
             int index = Math.max(0, Math.min(3, (x - layout.cardsX()) / (buttonWidth + 6)));
             if (index < snapshot.limits().size()) toggleLimit(snapshot.limits().get(index));
             return;
         }
-        if (y >= getHeight() - 50 && x >= layout.sideX()) {
+        if (y >= getHeight() - 70 && y <= getHeight() - 40 && x >= layout.sideX()) {
             annunciatorExpanded = !annunciatorExpanded;
             repaint();
             return;

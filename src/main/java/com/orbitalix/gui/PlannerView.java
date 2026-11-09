@@ -19,6 +19,8 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.util.concurrent.ThreadLocalRandom;
@@ -132,7 +134,13 @@ public final class PlannerView extends View {
                 BorderFactory.createEmptyBorder(14, 16, 14, 16)));
         JLabel label = new JLabel(title);
         label.setForeground(theme.accent()); label.setFont(label.getFont().deriveFont(Font.BOLD, 11f));
-        panel.add(label, BorderLayout.NORTH); panel.add(component, BorderLayout.CENTER);
+        JPanel control = new JPanel(new GridBagLayout());
+        control.setOpaque(false);
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.gridx = 0; constraints.gridy = 0; constraints.weightx = 1;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        control.add(component, constraints);
+        panel.add(label, BorderLayout.NORTH); panel.add(control, BorderLayout.CENTER);
         return panel;
     }
 

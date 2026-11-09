@@ -22,6 +22,7 @@ import com.orbitalix.gui.ReportsView;
 import com.orbitalix.gui.SettingsView;
 import com.orbitalix.gui.SystemsView;
 import com.orbitalix.gui.MissionEffectsOverlay;
+import com.orbitalix.gui.core.KeyboardShortcuts;
 import com.orbitalix.gui.render3d.Camera;
 import com.orbitalix.gui.render3d.Renderer;
 import com.orbitalix.gui.render3d.SpacecraftModel;
@@ -57,6 +58,11 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 
 /** Headless regression matrix verifies seeded determinism and representative autonomy survival. */
 public final class SelfTest {
@@ -99,6 +105,8 @@ public final class SelfTest {
         failures += runSystemsCrewChecks();
         failures += runReplayInteractionChecks();
         failures += runReportsEffectsChecks();
+        failures += runKeyboardShortcutChecks();
+        failures += runDemoStoryChecks();
         System.out.println(failures == 0 ? "SELFTEST PASS (determinism and survival checks)" : "SELFTEST FAIL: " + failures + " assertion(s)");
         return failures == 0 ? 0 : 1;
     }
@@ -431,7 +439,7 @@ public final class SelfTest {
         failures += check(engine.snapshot().throttle() >= 35 && engine.snapshot().throttle() <= 42,
                 "Dashboard throttle slider");
 
-        view.dispatchEvent(mouse(view, MouseEvent.MOUSE_CLICKED, 100, 685));
+        view.dispatchEvent(mouse(view, MouseEvent.MOUSE_CLICKED, 100, 667));
         double raisedThrottleLimit = engine.snapshot().limits().stream()
                 .filter(limit -> limit.type() == LimitType.MAX_THROTTLE).findFirst().orElseThrow().value();
         failures += check(raisedThrottleLimit == 90, "Dashboard operating-limit control");
@@ -512,6 +520,9 @@ public final class SelfTest {
         SimulationEngine engine = new SimulationEngine();
         DefaultSimulationController controller = new DefaultSimulationController(engine);
         PlannerView planner = new PlannerView(controller, Themes.DARK_MISSION);
+        planner.setSize(1280, 720);
+        layoutRecursively(planner);
+        failures += check(planner.destinationSelector().getHeight() < 60, "Planner selection controls keep compact height");
         planner.seedField().setText("not-a-number");
         planner.launchButton().doClick();
         failures += check(!controller.isRunning(), "Planner rejects an invalid seed");
@@ -537,6 +548,9 @@ public final class SelfTest {
         controller.setSetting("theme", Themes.DARK_MISSION.name());
         SettingsView settings = new SettingsView(controller, Themes.DARK_MISSION,
                 selected -> controller.setSetting("theme", selected.name()));
+        settings.setSize(1280, 720);
+        layoutRecursively(settings);
+        failures += check(settings.themeSelector().getHeight() < 60, "Settings controls keep compact height");
         settings.themeSelector().setSelectedItem(Themes.NEON);
         failures += check(controller.getSetting("theme", "").equals(Themes.NEON.name()),
                 "Settings theme preference persistence");
@@ -641,9 +655,83 @@ public final class SelfTest {
         return failures;
     }
 
+    private static int runKeyboardShortcutChecks() {
+        int failures = 0;
+        JPanel root = new JPanel();
+        List<String> views = List.of("Planner", "Dashboard", "Cutaway", "Orbit", "Systems",
+                "Crew", "Replay", "Console", "Reports", "Settings");
+        List<String> openedViews = new ArrayList<>();
+        AtomicInteger play = new AtomicInteger(), focus = new AtomicInteger(), screenshot = new AtomicInteger();
+        AtomicInteger fullScreen = new AtomicInteger(), clear = new AtomicInteger();
+        KeyboardShortcuts.install(root, views, play::incrementAndGet, openedViews::add,
+                focus::incrementAndGet, screenshot::incrementAndGet,
+                fullScreen::incrementAndGet, clear::incrementAndGet);
+        failures += check(triggerShortcut(root, KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0))
+                && play.get() == 1, "Space play/pause shortcut");
+        failures += check(triggerShortcut(root, KeyStroke.getKeyStroke(KeyEvent.VK_1, 0))
+                && triggerShortcut(root, KeyStroke.getKeyStroke(KeyEvent.VK_0, 0))
+                && openedViews.equals(List.of("Dashboard", "Planner")), "Number-key view shortcuts");
+        failures += check(triggerShortcut(root, KeyStroke.getKeyStroke(KeyEvent.VK_K, KeyEvent.CTRL_DOWN_MASK))
+                && triggerShortcut(root, KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK))
+                && focus.get() == 1 && screenshot.get() == 1, "Console and screenshot shortcuts");
+        failures += check(triggerShortcut(root, KeyStroke.getKeyStroke(KeyEvent.VK_F11, 0))
+                && triggerShortcut(root, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0))
+                && fullScreen.get() == 1 && clear.get() == 1, "Fullscreen and Escape shortcuts");
+        return failures;
+    }
+
+    private static int runDemoStoryChecks() {
+        int failures = 0;
+        SimulationEngine engine = new SimulationEngine(new MissionConfig(Destination.MARS_TRANSFER,
+                CraftType.CREW_CAPSULE, Difficulty.HARD, 2026L, false, 0));
+        DefaultSimulationController controller = new DefaultSimulationController(engine);
+        controller.setUplinkDelay(true);
+        controller.injectFault("Propulsion", FaultType.FUEL_LEAK);
+        for (int i = 0; i < 4; i++) controller.tick();
+        failures += check(controller.snapshot().config().difficulty() == Difficulty.HARD
+                && controller.snapshot().config().destination() == Destination.MARS_TRANSFER,
+                "Demo mission planner configuration");
+        if (controller.snapshot().recommendations().isEmpty()) {
+            failures += check(false, "Demo fuel-warning recommendation");
+            return failures;
+        }
+        String recommendationId = controller.snapshot().recommendations().get(0).id();
+        failures += check(controller.previewRecommendation(recommendationId, 30).lookaheadTicks() == 30,
+                "Demo advisor what-if preview");
+        controller.executeRecommendation(recommendationId);
+        failures += check(!controller.snapshot().comms().queue().isEmpty(), "Demo delayed command uplink");
+
+        controller.setAutonomyMode(AutonomyMode.FULL_AUTO);
+        controller.assignCrewTask(controller.snapshot().crew().get(0).name(), CrewTaskType.REST);
+        failures += check(controller.executeCommand("status").contains("T+"), "Demo console status command");
+        failures += check(controller.executeCommand("inject hull_breach").contains("Injected HULL_BREACH"),
+                "Demo console fault injection");
+        for (int i = 0; i < 4; i++) controller.tick();
+        controller.seekTo(2);
+        failures += check(controller.snapshot().replaying() && controller.snapshot().tick() == 2,
+                "Demo replay scrubber");
+        controller.resumeLive();
+        failures += check(controller.generateReportHtml().contains("Mission Report")
+                && controller.exportTelemetryCsv().contains("tick"), "Demo report preview and export data");
+        return failures;
+    }
+
+    private static boolean triggerShortcut(JComponent root, KeyStroke key) {
+        Object name = root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).get(key);
+        if (name == null || root.getActionMap().get(name) == null) return false;
+        root.getActionMap().get(name).actionPerformed(new ActionEvent(root, ActionEvent.ACTION_PERFORMED, name.toString()));
+        return true;
+    }
+
     private static int check(boolean passed, String label) {
         if (passed) return 0;
         System.err.println("Release-one check failed: " + label);
         return 1;
+    }
+
+    private static void layoutRecursively(java.awt.Container container) {
+        container.doLayout();
+        for (java.awt.Component child : container.getComponents())
+            if (child instanceof java.awt.Container nested) layoutRecursively(nested);
     }
 }
