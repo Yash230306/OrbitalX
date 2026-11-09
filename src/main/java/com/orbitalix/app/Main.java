@@ -12,6 +12,7 @@ import javax.swing.SwingUtilities;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
+import java.util.Locale;
 
 /** Application entry point for the desktop mission-control GUI and CLI tools. */
 public final class Main {
@@ -38,15 +39,26 @@ public final class Main {
             System.out.println("OrbitalIX Mission Control CLI - type help, tick [n], or quit");
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String line;
-            while ((line = reader.readLine()) != null && !line.equalsIgnoreCase("quit")) {
-                if (line.equalsIgnoreCase("tick") || line.startsWith("tick ")) {
-                    int count = line.equals("tick") ? 1 : Integer.parseInt(line.substring(5).trim());
-                    for (int i = 0; i < count; i++) controller.tick();
-                    System.out.println(controller.executeCommand("status"));
-                } else if (line.equalsIgnoreCase("report")) {
+            while ((line = reader.readLine()) != null) {
+                String command = line.trim();
+                if (command.equalsIgnoreCase("quit")) break;
+                if (command.equalsIgnoreCase("tick") || command.toLowerCase(Locale.ROOT).startsWith("tick ")) {
+                    try {
+                        int count = command.equalsIgnoreCase("tick") ? 1 : Integer.parseInt(command.substring(5).trim());
+                        if (count < 1) throw new IllegalArgumentException("Tick count must be at least 1");
+                        for (int i = 0; i < count; i++) controller.tick();
+                        System.out.println(controller.executeCommand("status"));
+                    } catch (IllegalArgumentException | IllegalStateException ex) {
+                        System.out.println("Error: " + ex.getMessage());
+                    }
+                } else if (command.equalsIgnoreCase("report")) {
                     System.out.println(controller.executeCommand("report"));
                 } else {
-                    System.out.println(controller.executeCommand(line));
+                    try {
+                        System.out.println(controller.executeCommand(command));
+                    } catch (IllegalArgumentException | IllegalStateException ex) {
+                        System.out.println("Error: " + ex.getMessage());
+                    }
                 }
             }
         }

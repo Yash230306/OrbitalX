@@ -118,6 +118,17 @@ public final class SelfTest {
 
     private static int runApiChecks() {
         int failures = 0;
+        SimulationEngine commandEngine = new SimulationEngine();
+        failures += check(commandEngine.executeCommand("config destination moon").contains("MOON")
+                && commandEngine.config().destination() == Destination.MOON,
+                "CLI destination configuration");
+        failures += check(commandEngine.executeCommand("config craft explorer").contains("EXPLORER")
+                && commandEngine.config().craftType() == CraftType.EXPLORER,
+                "CLI spacecraft configuration");
+        failures += check(commandEngine.executeCommand("config difficulty hard").contains("HARD")
+                && commandEngine.config().difficulty() == Difficulty.HARD
+                && commandEngine.executeCommand("help").contains("config <destination|craft|difficulty>"),
+                "CLI difficulty configuration and help");
         MissionConfig built = MissionConfig.builder().destination(Destination.MOON)
                 .craftType(CraftType.CREW_CAPSULE).difficulty(Difficulty.EASY).seed(17L).build();
         if (built.destination() != Destination.MOON || built.seed() != 17L) failures++;

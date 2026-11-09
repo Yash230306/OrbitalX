@@ -106,7 +106,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
 
     {
         for (String command : List.of("help", "status", "throttle", "inject", "autonomy", "heal", "uplink",
-                "exec", "dismiss", "limits", "crew", "task", "preview", "scenario", "seek", "report", "clear"))
+                "exec", "dismiss", "limits", "crew", "task", "preview", "scenario", "config", "seek", "report", "clear"))
             commandRegistry.register(command, this::executeCommandLegacy);
     }
 
@@ -860,7 +860,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
         String[] tokens = line.trim().split("\\s+");
         try {
             return switch (tokens[0].toLowerCase(Locale.ROOT)) {
-                case "help" -> "Commands: help status throttle <0-100> inject <fault> exec <id> dismiss <id> limits [type value [override]] crew task <name> <task> autonomy <manual|timed|full> heal <on|off> uplink <on|off> preview <id> [ticks] scenario <0-11> seek <tick> report";
+                case "help" -> "Commands: help status throttle <0-100> inject <fault> exec <id> dismiss <id> limits [type value [override]] crew; task <name> <task> autonomy <manual|timed|full> heal <on|off> uplink <on|off> preview <id> [ticks] scenario <0-11> config <destination|craft|difficulty> <name> seek <tick> report";
                 case "status" -> "T+" + tick + " " + spacecraftStatus() + " fuel=" + fmt(fuel) + " battery=" + fmt(battery) +
                         " oxygen=" + fmt(oxygen) + " progress=" + fmt(progress) + "/" + fmt(config.destination().distance());
                 case "throttle" -> { require(tokens, 2); setThrottle(Integer.parseInt(tokens[1])); yield "Throttle command accepted: " + tokens[1] + "%"; }

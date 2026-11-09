@@ -51,19 +51,23 @@ Start with `help`. The CLI accepts `tick` or `tick <count>` to advance the simul
 status
 throttle 60
 inject fuel-leak
+exec <recommendation-id>
+dismiss <recommendation-id>
 autonomy manual|timed|full
 heal on|off
 uplink on|off
-limits
+limits [type value [override]]
 crew
 task <crew-name-or-role> <task>
 preview <recommendation-id> [ticks]
 scenario <index>
+config destination|craft|difficulty <name>
 seek <tick>
 report
 quit
 ```
 
+The standalone CLI also accepts `tick` and `tick <count>` to advance the mission.
 Events are printed to the terminal and appended to `out/mission-events.log`; report and telemetry export controls are also available in the Reports view.
 
 ## GUI shortcuts
