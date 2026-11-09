@@ -36,9 +36,11 @@ public final class Spacecraft implements SystemComponent, FaultTarget, Copyable<
     private boolean reserveCrossFeed;
     private boolean crewSheltered;
     private boolean solarPanelsReoriented;
+    private boolean backupSensorActive;
     private boolean computerOffline;
     private int computerError;
     private int computerFreeze;
+    private int coolantRestartTicks;
     private SpacecraftState state = new NominalState();
 
     public Spacecraft(MissionConfig config) {
@@ -98,6 +100,8 @@ public final class Spacecraft implements SystemComponent, FaultTarget, Copyable<
     public synchronized boolean computerOffline() { return computerOffline; }
     public synchronized int computerError() { return computerError; }
     public synchronized int computerFreeze() { return computerFreeze; }
+    public synchronized boolean backupSensorActive() { return backupSensorActive; }
+    public synchronized int coolantRestartTicks() { return coolantRestartTicks; }
     public synchronized SpacecraftState state() { return state; }
     public synchronized void setState(SpacecraftState value) { state = Objects.requireNonNull(value); }
     public synchronized List<Subsystem> subsystems() { return List.copyOf(subsystems); }
@@ -147,6 +151,23 @@ public final class Spacecraft implements SystemComponent, FaultTarget, Copyable<
         if (computerFreeze == 0) computerOffline = false;
     }
     public synchronized void restartComputer() { computerError = 0; computerFreeze = 0; computerOffline = false; }
+    public synchronized void rebootComputer() { computerError = 0; computerFreeze = 3; computerOffline = true; }
+    public synchronized void switchToBackupComputer() { computerError = 0; computerFreeze = 0; computerOffline = false; }
+    public synchronized void setBackupSensorActive(boolean value) { backupSensorActive = value; }
+    public synchronized void restartCoolantPump() {
+        clearFault(FaultType.COOLANT_FAILURE);
+        coolantWorking = false;
+        coolantRestartTicks = 3;
+    }
+    public synchronized void advanceCoolantRestart() {
+        if (coolantRestartTicks > 0 && --coolantRestartTicks == 0) coolantWorking = true;
+    }
+    public synchronized boolean spendFuel(double amount) {
+        if (!Double.isFinite(amount) || amount < 0) throw new IllegalArgumentException("Fuel cost must be non-negative");
+        if (fuel.level() < amount) return false;
+        fuel.consume(amount);
+        return true;
+    }
     public synchronized boolean sealBreach() {
         if (!sealant.useOne()) return false;
         pressure = Math.min(101, pressure + 18);
@@ -206,6 +227,8 @@ public final class Spacecraft implements SystemComponent, FaultTarget, Copyable<
         clone.backupScrubberActive = backupScrubberActive; clone.reserveCrossFeed = reserveCrossFeed;
         clone.crewSheltered = crewSheltered; clone.computerOffline = computerOffline;
         clone.solarPanelsReoriented = solarPanelsReoriented;
+        clone.backupSensorActive = backupSensorActive;
+        clone.coolantRestartTicks = coolantRestartTicks;
         clone.computerError = computerError; clone.computerFreeze = computerFreeze;
         clone.crewRoster = crewRoster.copy();
         clone.state = state.copy();

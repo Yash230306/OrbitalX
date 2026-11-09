@@ -8,7 +8,8 @@ final class StateTransitions {
         return switch (health) {
             case NOMINAL -> new NominalState();
             case WARNING -> new WarningState();
-            case CRITICAL, FAILED -> new CriticalState();
+            case CRITICAL -> new CriticalState();
+            case FAILED -> new SafeModeState();
         };
     }
 }

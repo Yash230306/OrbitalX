@@ -15,7 +15,7 @@ public final class PropulsionSubsystem extends Subsystem {
         double burn = (0.1 + 1.4 * throttle * throttle) * craft.config().difficulty().burnMultiplier();
         if (hasFault(FaultType.FUEL_LEAK)) burn += 0.45;
         craft.burnFuel(burn);
-        craft.setEngineEfficiency(hasFault(FaultType.ENGINE_MISFIRE) ? 0.55 : 1.0);
+        craft.setEngineEfficiency(craft.backupEngineActive() ? 0.85 : hasFault(FaultType.ENGINE_MISFIRE) ? 0.55 : 1.0);
     }
     @Override public PropulsionSubsystem copy(Spacecraft newOwner) {
         PropulsionSubsystem copy = new PropulsionSubsystem(newOwner); copyFaultsTo(copy); return copy;

@@ -9,7 +9,7 @@ public final class PowerSubsystem extends Subsystem {
         super("Power", List.of(new VoltageSensor("bus-voltage", owner::battery)));
     }
     @Override protected void applyPhysics(Spacecraft craft, SpaceEnvironment environment) {
-        double generation = hasFault(FaultType.SOLAR_FAILURE) ? 0
+        double generation = hasFault(FaultType.SOLAR_FAILURE) && !craft.solarPanelsReoriented() ? 0
                 : (craft.solarPanelsReoriented() ? 0.3 : 0.6) * environment.solarFlux();
         double load = 0.2 + 0.3 * craft.throttle() / 100.0 + (craft.nonEssentialSystemsOn() ? 0.2 : 0);
         craft.updateBattery(generation - load);

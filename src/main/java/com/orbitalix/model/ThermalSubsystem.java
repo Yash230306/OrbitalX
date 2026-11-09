@@ -12,6 +12,7 @@ public final class ThermalSubsystem extends Subsystem {
         if (hasFault(FaultType.COOLANT_FAILURE)) craft.setCoolantWorking(false);
     }
     @Override protected void applyPhysics(Spacecraft craft, SpaceEnvironment environment) {
+        craft.advanceCoolantRestart();
         double target = 20 + 0.75 * craft.throttle() + (craft.nonEssentialSystemsOn() ? 5 : 0);
         if (craft.radiatorsActive() && craft.coolantWorking()) target -= 15;
         if (hasFault(FaultType.OVERHEAT)) target += 17;
