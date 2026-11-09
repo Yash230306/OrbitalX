@@ -37,6 +37,8 @@ public final class ScreenshotHarness {
                             : view.equals("Planner") ? new PlannerView(renderController, theme)
                             : view.equals("Console") ? new ConsoleView(renderController, theme)
                             : view.equals("Settings") ? new SettingsView(renderController, theme, ignored -> {})
+                            : view.equals("Systems") ? new SystemsView(renderController, theme)
+                            : view.equals("Crew") ? new CrewView(renderController, theme)
                             : new MissionView(view, renderController, theme);
                     panel.setSize(size[0], size[1]);
                     layoutRecursively(panel);

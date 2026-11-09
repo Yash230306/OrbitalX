@@ -10,12 +10,15 @@ import com.orbitalix.api.FaultType;
 import com.orbitalix.api.EventType;
 import com.orbitalix.api.MissionEvent;
 import com.orbitalix.api.Severity;
+import com.orbitalix.api.CrewTaskType;
 import com.orbitalix.gui.DashboardView;
 import com.orbitalix.gui.CutawayView;
 import com.orbitalix.gui.ConsoleView;
+import com.orbitalix.gui.CrewView;
 import com.orbitalix.gui.OrbitView;
 import com.orbitalix.gui.PlannerView;
 import com.orbitalix.gui.SettingsView;
+import com.orbitalix.gui.SystemsView;
 import com.orbitalix.gui.render3d.Camera;
 import com.orbitalix.gui.render3d.Renderer;
 import com.orbitalix.gui.render3d.SpacecraftModel;
@@ -90,6 +93,7 @@ public final class SelfTest {
         failures += runDashboardInteractionChecks();
         failures += runCutawayOrbitChecks();
         failures += runPlannerConsoleSettingsChecks();
+        failures += runSystemsCrewChecks();
         System.out.println(failures == 0 ? "SELFTEST PASS (determinism and survival checks)" : "SELFTEST FAIL: " + failures + " assertion(s)");
         return failures == 0 ? 0 : 1;
     }
@@ -533,6 +537,38 @@ public final class SelfTest {
                 "Settings theme preference persistence");
         controller.setSetting("theme", Themes.DARK_MISSION.name());
         settings.close();
+        return failures;
+    }
+
+    private static int runSystemsCrewChecks() {
+        int failures = 0;
+        SimulationEngine engine = new SimulationEngine();
+        DefaultSimulationController controller = new DefaultSimulationController(engine);
+        controller.setUplinkDelay(false);
+
+        SystemsView systems = new SystemsView(controller, Themes.DARK_MISSION);
+        systems.setSize(1280, 720);
+        if (controller.snapshot().subsystems().size() > 1) {
+            String nextSubsystem = controller.snapshot().subsystems().get(1).name();
+            systems.dispatchEvent(mouse(systems, MouseEvent.MOUSE_CLICKED, 120, 170));
+            failures += check(systems.selectedSubsystem().equals(nextSubsystem), "Systems subsystem selection");
+        }
+        systems.close();
+
+        CrewView crew = new CrewView(controller, Themes.DARK_MISSION);
+        crew.setSize(1280, 720);
+        if (!controller.snapshot().crew().isEmpty()) {
+            int cardWidth = (1280 - 56 - 14) / 2;
+            int buttonWidth = (cardWidth - 48) / 2;
+            int restX = 28 + 18 + buttonWidth + 10 + buttonWidth / 2;
+            int restY = 88 + (720 - 88 - 48 - 14) / 2 - 58 + 25 + 10;
+            String crewName = controller.snapshot().crew().get(0).name();
+            crew.dispatchEvent(mouse(crew, MouseEvent.MOUSE_CLICKED, restX, restY));
+            failures += check(controller.snapshot().crew().get(0).task().equals(CrewTaskType.REST.name())
+                    && controller.snapshot().crew().get(0).taskTicksLeft() > 0, "Crew task assignment");
+            failures += check(crew.taskMessage().contains(crewName), "Crew task assignment feedback");
+        }
+        crew.close();
         return failures;
     }
 

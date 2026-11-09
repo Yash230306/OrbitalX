@@ -57,6 +57,8 @@ public final class MainWindow extends JFrame {
             else if (view.equals("Planner")) viewRegistry.register(view, () -> new PlannerView(controller, theme));
             else if (view.equals("Console")) viewRegistry.register(view, () -> new ConsoleView(controller, theme));
             else if (view.equals("Settings")) viewRegistry.register(view, () -> new SettingsView(controller, theme, this::selectTheme));
+            else if (view.equals("Systems")) viewRegistry.register(view, () -> new SystemsView(controller, theme));
+            else if (view.equals("Crew")) viewRegistry.register(view, () -> new CrewView(controller, theme));
             else viewRegistry.register(view, () -> new MissionView(view, controller, theme));
         }
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);

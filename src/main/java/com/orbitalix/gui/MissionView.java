@@ -315,7 +315,7 @@ public class MissionView extends View {
         controller.setLimit(limit.type(), value, override);
     }
 
-    private String fitText(Graphics2D g, String text, int maxWidth) {
+    protected String fitText(Graphics2D g, String text, int maxWidth) {
         if (g.getFontMetrics().stringWidth(text) <= maxWidth) return text;
         String shortened = text;
         while (!shortened.isEmpty() && g.getFontMetrics().stringWidth(shortened + "...") > maxWidth)
@@ -398,7 +398,7 @@ public class MissionView extends View {
         drawButton(g, w - 210, h - 80, 160, 36, "AUTO-ROTATE: ON", false);
     }
 
-    private void drawSystems(Graphics2D g, int w, int h) {
+    protected void drawSystems(Graphics2D g, int w, int h) {
         int listX = 28, top = 86, listW = (w - 72) / 2, row = 56;
         card(g, listX, top, listW, h - 120);
         label(g, "SPACECRAFT HEALTH TREE", listX + 18, top + 28, theme.accent());
@@ -428,7 +428,7 @@ public class MissionView extends View {
         }
     }
 
-    private void drawCrew(Graphics2D g, int w, int h) {
+    protected void drawCrew(Graphics2D g, int w, int h) {
         int cols = 2, gap = 14, margin = 28, top = 90;
         int cardW = (w - margin * 2 - gap) / cols;
         int cardH = (h - top - 44 - gap) / 2;
@@ -550,7 +550,7 @@ public class MissionView extends View {
         g.drawString(label.toUpperCase(Locale.ROOT), cx - radius, cy + radius + 17);
     }
 
-    private void drawMeter(Graphics2D g, int x, int y, int width, String name, double value, Color color) {
+    protected void drawMeter(Graphics2D g, int x, int y, int width, String name, double value, Color color) {
         small(g, name, x, y);
         g.setColor(theme.grid()); g.fillRoundRect(x, y + 7, width, 7, 7, 7);
         g.setColor(color); g.fillRoundRect(x, y + 7, (int) (width * Math.max(0, Math.min(1, value / 100))), 7, 7, 7);
@@ -561,7 +561,7 @@ public class MissionView extends View {
         g.setColor(theme.grid()); g.fillRoundRect(x, y, width, height, height, height);
         g.setColor(theme.accent()); g.fillRoundRect(x, y, (int) (width * Math.max(0, Math.min(1, percent / 100))), height, height, height);
     }
-    private void card(Graphics2D g, int x, int y, int width, int height) {
+    protected void card(Graphics2D g, int x, int y, int width, int height) {
         g.setColor(new Color(0, 0, 0, 32)); g.fillRoundRect(x + 2, y + 4, width, height, 16, 16);
         g.setColor(theme.panel()); g.fillRoundRect(x, y, width, height, 16, 16);
         g.setColor(theme.grid()); g.drawRoundRect(x, y, width, height, 16, 16);
@@ -574,10 +574,10 @@ public class MissionView extends View {
         FontMetrics fm = g.getFontMetrics();
         g.drawString(text, x + Math.max(8, (width - fm.stringWidth(text)) / 2), y + height / 2 + 4);
     }
-    private void label(Graphics2D g, String text, int x, int y, Color color) {
+    protected void label(Graphics2D g, String text, int x, int y, Color color) {
         g.setColor(color); g.setFont(new Font("Segoe UI", Font.BOLD, 12)); g.drawString(text, x, y);
     }
-    private void small(Graphics2D g, String text, int x, int y) {
+    protected void small(Graphics2D g, String text, int x, int y) {
         g.setColor(theme.muted()); g.setFont(new Font("Segoe UI", Font.PLAIN, 10)); g.drawString(text, x, y);
     }
     private static String number(double value) { return String.format(Locale.ROOT, "%.1f", value); }
