@@ -10,6 +10,8 @@ import com.orbitalix.api.FaultType;
 import com.orbitalix.api.EventType;
 import com.orbitalix.api.MissionEvent;
 import com.orbitalix.api.Severity;
+import com.orbitalix.gui.DashboardView;
+import com.orbitalix.gui.theme.Themes;
 import com.orbitalix.action.*;
 import com.orbitalix.advisor.*;
 import com.orbitalix.autonomy.*;
@@ -39,6 +41,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.awt.event.MouseEvent;
 
 /** Headless regression matrix verifies seeded determinism and representative autonomy survival. */
 public final class SelfTest {
@@ -75,6 +78,7 @@ public final class SelfTest {
         failures += runDetectionEventCopyChecks();
         failures += runActionAdvisorAutonomyChecks();
         failures += runReleaseOneIntegrationChecks();
+        failures += runDashboardInteractionChecks();
         System.out.println(failures == 0 ? "SELFTEST PASS (determinism and survival checks)" : "SELFTEST FAIL: " + failures + " assertion(s)");
         return failures == 0 ? 0 : 1;
     }
@@ -392,6 +396,48 @@ public final class SelfTest {
 
         if (failures != 0) System.err.println("Release-one integration checks failed: " + failures);
         return failures;
+    }
+
+    private static int runDashboardInteractionChecks() {
+        int failures = 0;
+        SimulationEngine engine = new SimulationEngine();
+        DefaultSimulationController controller = new DefaultSimulationController(engine);
+        controller.setUplinkDelay(false);
+        DashboardView view = new DashboardView(controller, Themes.DARK_MISSION);
+        view.setSize(1280, 720);
+
+        view.dispatchEvent(mouse(view, MouseEvent.MOUSE_PRESSED, 40, 390));
+        view.dispatchEvent(mouse(view, MouseEvent.MOUSE_RELEASED, 40, 390));
+        failures += check(engine.snapshot().throttle() >= 35 && engine.snapshot().throttle() <= 42,
+                "Dashboard throttle slider");
+
+        view.dispatchEvent(mouse(view, MouseEvent.MOUSE_CLICKED, 100, 685));
+        double raisedThrottleLimit = engine.snapshot().limits().stream()
+                .filter(limit -> limit.type() == LimitType.MAX_THROTTLE).findFirst().orElseThrow().value();
+        failures += check(raisedThrottleLimit == 90, "Dashboard operating-limit control");
+
+        controller.injectFault("Propulsion", FaultType.FUEL_LEAK);
+        for (int i = 0; i < 4; i++) controller.tick();
+        view.onTick(controller.snapshot());
+        List<com.orbitalix.api.RecommendationSnapshot> recommendations = controller.snapshot().recommendations();
+        failures += check(!recommendations.isEmpty(), "Dashboard displays active recommendation");
+        if (!recommendations.isEmpty()) {
+            int tickBeforePreview = engine.tickCount();
+            double fuelBeforePreview = engine.fuel();
+            view.dispatchEvent(mouse(view, MouseEvent.MOUSE_CLICKED, 806, 195));
+            failures += check(engine.tickCount() == tickBeforePreview && engine.fuel() == fuelBeforePreview
+                    && !view.previewMessage().isBlank(), "Dashboard preview remains isolated");
+            view.dispatchEvent(mouse(view, MouseEvent.MOUSE_CLICKED, 1096, 195));
+            failures += check(controller.snapshot().recommendations().stream()
+                    .noneMatch(item -> item.id().equals(recommendations.get(0).id())), "Dashboard dismiss action");
+        }
+        view.close();
+        if (failures != 0) System.err.println("Dashboard interaction checks failed: " + failures);
+        return failures;
+    }
+
+    private static MouseEvent mouse(DashboardView view, int id, int x, int y) {
+        return new MouseEvent(view, id, System.currentTimeMillis(), 0, x, y, 1, false, MouseEvent.BUTTON1);
     }
 
     private static int check(boolean passed, String label) {

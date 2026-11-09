@@ -7,19 +7,41 @@ import com.orbitalix.gui.theme.Theme;
 import java.awt.*;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Path2D;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /** Custom Java2D view canvas used by all mission-control panels. */
-public final class MissionView extends View {
+public class MissionView extends View {
     private final String title;
+    private boolean adjustingThrottle;
+    private String previewMessage = "";
+    private boolean annunciatorExpanded;
 
     public MissionView(String title, SimulationController controller, Theme theme) {
         super(controller, theme);
         this.title = title;
+        addMouseListener(new MouseAdapter() {
+            @Override public void mousePressed(MouseEvent event) {
+                adjustingThrottle = "Dashboard".equals(title) && inThrottleTrack(event.getX(), event.getY());
+                if (adjustingThrottle) updateThrottle(event.getY());
+            }
+            @Override public void mouseReleased(MouseEvent event) { adjustingThrottle = false; }
+            @Override public void mouseClicked(MouseEvent event) {
+                if ("Dashboard".equals(title)) handleDashboardClick(event.getX(), event.getY());
+            }
+        });
+        addMouseMotionListener(new MouseAdapter() {
+            @Override public void mouseDragged(MouseEvent event) {
+                if (adjustingThrottle) updateThrottle(event.getY());
+            }
+        });
     }
 
     public String title() { return title; }
+    public String previewMessage() { return previewMessage; }
 
     @Override protected void paintView(Graphics2D g) {
         int width = getWidth(), height = getHeight();
@@ -59,15 +81,15 @@ public final class MissionView extends View {
     }
 
     private void drawDashboard(Graphics2D g, int w, int h) {
-        int pad = 24, gap = 16, top = 78;
-        int cardsW = Math.max(240, (w - 2 * pad - 2 * gap) * 2 / 3);
-        int sideW = w - 2 * pad - 2 * gap - cardsW;
+        DashboardLayout layout = dashboardLayout(w, h);
+        int pad = layout.pad(), gap = layout.gap(), top = layout.top();
+        int cardsX = layout.cardsX(), cardsW = layout.cardsW(), sideW = layout.sideW(), sideX = layout.sideX();
         List<ResourceSnapshot> resources = snapshot.resources();
         int gaugeW = (cardsW - gap) / 2;
-        int gaugeH = Math.max(120, (h - top - 2 * pad - gap) / 3);
+        int gaugeH = layout.gaugeH();
         for (int i = 0; i < Math.min(resources.size(), 6); i++) {
             int col = i % 2, row = i / 2;
-            int x = pad + col * (gaugeW + gap), y = top + row * (gaugeH + gap);
+            int x = cardsX + col * (gaugeW + gap), y = top + row * (gaugeH + gap);
             card(g, x, y, gaugeW, gaugeH);
             ResourceSnapshot resource = resources.get(i);
             int gaugeRadius = Math.min(62, Math.max(34, (gaugeW - 150) / 2));
@@ -83,36 +105,208 @@ public final class MissionView extends View {
             g.drawString(resource.ticksToEmpty() >= 0 ? "EST. " + resource.ticksToEmpty() + " TICKS" : "NOMINAL",
                     x + gaugeRadius * 2 + 36, y + gaugeH / 2 + 20);
         }
-        int sideX = pad + cardsW + gap;
-        card(g, sideX, top, sideW, Math.max(120, (h - top - 2 * pad) * 2 / 3));
+        drawThrottle(g, layout);
+        card(g, sideX, top, sideW, layout.advisorHeight());
         label(g, "MISSION ADVISOR", sideX + 18, top + 28, theme.accent());
         List<RecommendationSnapshot> recs = snapshot.recommendations();
-        int y = top + 52;
+        int y = layout.rowsY();
         if (recs.isEmpty()) {
             label(g, "No active recommendations", sideX + 18, y + 15, theme.nominal());
             small(g, "Systems are nominal. Preview suggestions appear here.", sideX + 18, y + 37);
         }
-        for (RecommendationSnapshot rec : recs.stream().limit(5).toList()) {
-            g.setColor(theme.panelRaised()); g.fillRoundRect(sideX + 12, y, sideW - 24, 67, 10, 10);
+        for (RecommendationSnapshot rec : recs.stream().limit(layout.visibleRecommendations()).toList()) {
+            g.setColor(theme.panelRaised()); g.fillRoundRect(sideX + 12, y, sideW - 24, layout.rowHeight() - 4, 10, 10);
             g.setColor(rec.risk() == ActionRisk.COSTLY ? theme.warning() : theme.nominal());
-            g.fillRoundRect(sideX + 12, y, 4, 67, 4, 4);
+            g.fillRoundRect(sideX + 12, y, 4, layout.rowHeight() - 4, 4, 4);
             label(g, rec.title(), sideX + 25, y + 21, theme.foreground());
-            small(g, rec.explanation(), sideX + 25, y + 39);
-            small(g, rec.risk().name() + "  /  " + rec.ticksLeft() + " TICKS", sideX + 25, y + 56);
-            y += 75;
+            small(g, fitText(g, rec.explanation(), sideW - 52), sideX + 25, y + 39);
+            small(g, rec.risk().name() + "  /  " + rec.ticksLeft() + " TICKS", sideX + 25, y + 55);
+            int buttonY = y + layout.rowHeight() - 25;
+            int buttonW = (sideW - 42) / 3;
+            drawButton(g, sideX + 20, buttonY, buttonW, 19, "PREVIEW", false);
+            drawButton(g, sideX + 24 + buttonW, buttonY, buttonW, 19, "EXECUTE", true);
+            drawButton(g, sideX + 28 + buttonW * 2, buttonY, buttonW, 19, "DISMISS", false);
+            y += layout.rowHeight();
         }
-        int plotY = top + Math.max(120, (h - top - 2 * pad) * 2 / 3) + gap;
-        int plotH = h - plotY - pad;
+        int plotY = layout.plotY();
+        int plotH = h - plotY - layout.pad();
         card(g, sideX, plotY, sideW, plotH);
         label(g, "MISSION PROGRESS", sideX + 18, plotY + 27, theme.accent());
         drawProgress(g, sideX + 18, plotY + 48, sideW - 36, 10, snapshot.mission().progressPercent());
         small(g, String.format(Locale.ROOT, "%.1f%%     ETA %d TICKS", snapshot.mission().progressPercent(),
                 snapshot.mission().etaTicks()), sideX + 18, plotY + 80);
-        drawTimeline(g, sideX + 18, plotY + 95, sideW - 36, Math.max(35, plotH - 110));
+        drawTimeline(g, sideX + 18, plotY + 95, sideW - 36, Math.max(28, plotH - 109));
+        if (!previewMessage.isBlank()) {
+            int previewY = plotY + 90;
+            card(g, sideX + 10, previewY, sideW - 20, 54);
+            label(g, "WHAT-IF PREVIEW", sideX + 20, previewY + 18, theme.accent());
+            small(g, fitText(g, previewMessage, sideW - 42), sideX + 20, previewY + 37);
+        }
+        drawLimitControls(g, layout, h);
+        if (annunciatorExpanded) drawAnnunciator(g, layout, h);
         g.setColor(snapshot.spacecraftState().equals("WARNING") ? theme.warning() : theme.nominal());
         g.setFont(new Font("Segoe UI", Font.BOLD, 12));
         g.drawString(snapshot.spacecraftState() + (snapshot.autopilotOnline() ? "  / AUTOPILOT ONLINE" : "  / AUTOPILOT OFFLINE"), 30, h - 18);
     }
+
+    private DashboardLayout dashboardLayout(int width, int height) {
+        int pad = 24, gap = 16, top = 78, controlWidth = 66;
+        int available = Math.max(360, width - 2 * pad - controlWidth - 2 * gap);
+        int cardsWidth = Math.max(240, (available - gap) * 3 / 5);
+        int sideWidth = Math.max(180, available - cardsWidth - gap);
+        int advisorHeight = Math.max(120, (height - top - 2 * pad - 44) * 2 / 3);
+        int rowHeight = 82;
+        int visible = Math.max(1, Math.min(5, (advisorHeight - 60) / rowHeight));
+        int gaugeHeight = Math.max(112, (height - top - 2 * pad - gap - 44) / 3);
+        return new DashboardLayout(pad, gap, top, pad + controlWidth, cardsWidth, sideWidth,
+                pad + controlWidth + cardsWidth + gap, top + 52, advisorHeight, rowHeight, visible, gaugeHeight,
+                top + advisorHeight + gap, controlWidth);
+    }
+
+    private void drawThrottle(Graphics2D g, DashboardLayout layout) {
+        int x = layout.pad() + 18, top = layout.top() + 48, bottom = getHeight() - 78;
+        int trackHeight = Math.max(90, bottom - top);
+        g.setColor(theme.grid()); g.fillRoundRect(x, top, 12, trackHeight, 12, 12);
+        int maxThrottle = (int)Math.round(snapshot.limits().stream()
+                .filter(limit -> limit.type() == LimitType.MAX_THROTTLE).findFirst().orElseThrow().value());
+        int sliderPercent = (int)Math.round(100d * snapshot.throttle() / Math.max(1, maxThrottle));
+        g.setColor(theme.accent()); g.fillRoundRect(x, top + trackHeight * (100 - sliderPercent) / 100,
+                12, trackHeight * sliderPercent / 100, 12, 12);
+        int thumbY = top + trackHeight * (100 - sliderPercent) / 100;
+        g.setColor(theme.foreground()); g.fillOval(x - 6, thumbY - 5, 24, 14);
+        label(g, "THR", layout.pad() + 9, top - 14, theme.muted());
+        small(g, snapshot.throttle() + "%", layout.pad() + 2, bottom + 18);
+        small(g, "DRAG", layout.pad() - 1, bottom + 32);
+    }
+
+    private void drawLimitControls(Graphics2D g, DashboardLayout layout, int height) {
+        int y = height - 46, x = layout.cardsX(), buttonWidth = Math.max(80, (layout.cardsW() - 24) / 4);
+        for (int i = 0; i < Math.min(4, snapshot.limits().size()); i++) {
+            LimitSnapshot limit = snapshot.limits().get(i);
+            String name = limit.type().name().replace("MIN_", "MIN ").replace("MAX_", "MAX ");
+            drawButton(g, x + i * (buttonWidth + 6), y, buttonWidth, 24,
+                    name + " " + Math.round(limit.value()) + (limit.overridden() ? " OVERRIDE" : ""), limit.overridden());
+        }
+        long activeFaults = snapshot.subsystems().stream().filter(system -> !system.activeFaults().isEmpty()).count();
+        Color caution = activeFaults == 0 ? theme.nominal() : theme.critical();
+        g.setColor(caution); g.fillOval(layout.sideX(), y + 6, 12, 12);
+        String cautionText = activeFaults == 0 ? "MASTER CAUTION CLEAR" : "MASTER CAUTION  /  " + activeFaults + " SYSTEMS";
+        small(g, cautionText,
+                layout.sideX() + 18, y + 17);
+        if (activeFaults > 0 && (System.currentTimeMillis() / 350) % 2 == 0) {
+            g.setColor(theme.critical()); g.setStroke(new BasicStroke(2));
+            g.drawRoundRect(layout.sideX() - 3, y - 5, Math.max(140, layout.sideW() - 18), 30, 8, 8);
+        }
+    }
+
+    private void drawAnnunciator(Graphics2D g, DashboardLayout layout, int height) {
+        int x = layout.pad(), y = height - 196, width = getWidth() - 2 * layout.pad(), panelHeight = 148;
+        card(g, x, y, width, panelHeight);
+        label(g, "MASTER CAUTION / ANNUNCIATOR   ·   CLICK TO CLOSE", x + 16, y + 22, theme.critical());
+        String[] tiles = {"FUEL", "TEMP", "PWR", "COMM", "GYRO", "O2", "CO2", "PRESS", "RAD", "NAV",
+                "DEBRIS", "CPU", "ENGINE", "LIMITS", "CREW", "UPLINK", "SOLAR", "COOLANT", "HULL", "AUTOPILOT"};
+        Set<String> faults = snapshot.subsystems().stream().flatMap(system -> system.activeFaults().stream())
+                .map(value -> value.toUpperCase(Locale.ROOT)).collect(java.util.stream.Collectors.toSet());
+        int columns = 5, gap = 7, tileWidth = (width - 32 - gap * (columns - 1)) / columns;
+        int tileHeight = 22;
+        for (int i = 0; i < tiles.length; i++) {
+            String tile = tiles[i];
+            boolean active = faults.stream().anyMatch(fault -> fault.contains(tile))
+                    || tile.equals("UPLINK") && snapshot.comms().blackout()
+                    || tile.equals("AUTOPILOT") && !snapshot.autopilotOnline()
+                    || tile.equals("LIMITS") && snapshot.limits().stream().anyMatch(LimitSnapshot::overridden)
+                    || tile.equals("FUEL") && snapshot.resources().stream().anyMatch(resource ->
+                        resource.name().equalsIgnoreCase("fuel") && resource.level() < resource.capacity() * .25);
+            int tx = x + 16 + (i % columns) * (tileWidth + gap);
+            int ty = y + 34 + (i / columns) * (tileHeight + 5);
+            g.setColor(active ? theme.critical() : theme.panelRaised());
+            g.fillRoundRect(tx, ty, tileWidth, tileHeight, 6, 6);
+            g.setColor(active ? Color.WHITE : theme.muted());
+            g.setFont(new Font("Segoe UI", Font.BOLD, 9));
+            g.drawString(tile + (active ? "  !" : ""), tx + 7, ty + 15);
+        }
+    }
+
+    private boolean inThrottleTrack(int x, int y) {
+        DashboardLayout layout = dashboardLayout(getWidth(), getHeight());
+        return x >= layout.pad() && x <= layout.pad() + layout.controlWidth()
+                && y >= layout.top() + 38 && y <= getHeight() - 68;
+    }
+
+    private void updateThrottle(int y) {
+        int top = 78 + 48, bottom = getHeight() - 78;
+        int trackHeight = Math.max(90, bottom - top);
+        int maxThrottle = (int)Math.round(snapshot.limits().stream()
+                .filter(limit -> limit.type() == LimitType.MAX_THROTTLE).findFirst().orElseThrow().value());
+        int percent = (int)Math.round((double)maxThrottle
+                * (1 - Math.max(0, Math.min(trackHeight, y - top)) / (double)trackHeight));
+        controller.setThrottle(percent);
+    }
+
+    private void handleDashboardClick(int x, int y) {
+        DashboardLayout layout = dashboardLayout(getWidth(), getHeight());
+        if (annunciatorExpanded && y >= getHeight() - 196 && y <= getHeight() - 48) {
+            annunciatorExpanded = false;
+            repaint();
+            return;
+        }
+        if (y >= getHeight() - 50 && x >= layout.cardsX() && x < layout.cardsX() + layout.cardsW()) {
+            int buttonWidth = Math.max(80, (layout.cardsW() - 24) / 4);
+            int index = Math.max(0, Math.min(3, (x - layout.cardsX()) / (buttonWidth + 6)));
+            if (index < snapshot.limits().size()) toggleLimit(snapshot.limits().get(index));
+            return;
+        }
+        if (y >= getHeight() - 50 && x >= layout.sideX()) {
+            annunciatorExpanded = !annunciatorExpanded;
+            repaint();
+            return;
+        }
+        if (x < layout.sideX() || y < layout.rowsY()) return;
+        int row = (y - layout.rowsY()) / layout.rowHeight();
+        if (row < 0 || row >= layout.visibleRecommendations() || row >= snapshot.recommendations().size()) return;
+        int buttonY = layout.rowsY() + row * layout.rowHeight() + layout.rowHeight() - 25;
+        if (y < buttonY || y > buttonY + 20) return;
+        RecommendationSnapshot recommendation = snapshot.recommendations().get(row);
+        int buttonWidth = (layout.sideW() - 42) / 3;
+        int relativeX = x - (layout.sideX() + 20);
+        if (relativeX < buttonWidth + 4) {
+            PreviewResult result = controller.previewRecommendation(recommendation.id(), Math.max(1, recommendation.ticksLeft()));
+            previewMessage = "PREVIEW: " + result.outcome() + " / fuel " + number(result.fuelAfter());
+        } else if (relativeX < buttonWidth * 2 + 8) {
+            controller.executeRecommendation(recommendation.id());
+            previewMessage = "EXECUTING: " + recommendation.title();
+        } else {
+            controller.dismissRecommendation(recommendation.id());
+            previewMessage = "DISMISSED: " + recommendation.title();
+        }
+        repaint();
+    }
+
+    private void toggleLimit(LimitSnapshot limit) {
+        double defaultValue = switch (limit.type()) {
+            case MAX_THROTTLE -> 80;
+            case MAX_TEMPERATURE -> 85;
+            case MIN_BATTERY -> 20;
+            case MIN_FUEL_RESERVE -> 15;
+        };
+        double value = limit.value() > limit.designMax()
+                ? defaultValue
+                : Math.min(limit.designMax() + 10, limit.value() + 10);
+        boolean override = value > limit.designMax();
+        controller.setLimit(limit.type(), value, override);
+    }
+
+    private String fitText(Graphics2D g, String text, int maxWidth) {
+        if (g.getFontMetrics().stringWidth(text) <= maxWidth) return text;
+        String shortened = text;
+        while (!shortened.isEmpty() && g.getFontMetrics().stringWidth(shortened + "...") > maxWidth)
+            shortened = shortened.substring(0, shortened.length() - 1);
+        return shortened + "...";
+    }
+
+    private record DashboardLayout(int pad, int gap, int top, int cardsX, int cardsW, int sideW, int sideX, int rowsY,
+                                   int advisorHeight, int rowHeight, int visibleRecommendations, int gaugeH,
+                                   int plotY, int controlWidth) {}
 
     private void drawPlanner(Graphics2D g, int w, int h) {
         int x = 28, y = 90, cardW = (w - 80) / 3;

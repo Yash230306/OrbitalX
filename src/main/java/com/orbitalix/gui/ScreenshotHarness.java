@@ -28,7 +28,9 @@ public final class ScreenshotHarness {
         for (Themes theme : Themes.all()) {
             for (String view : VIEWS) {
                 for (int[] size : new int[][]{{1280, 720}, {1920, 1080}}) {
-                    MissionView panel = new MissionView(view, renderController, theme);
+                    MissionView panel = view.equals("Dashboard")
+                            ? new DashboardView(renderController, theme)
+                            : new MissionView(view, renderController, theme);
                     panel.setSize(size[0], size[1]);
                     BufferedImage image = new BufferedImage(size[0], size[1], BufferedImage.TYPE_INT_ARGB);
                     Graphics2D graphics = image.createGraphics();

@@ -22,6 +22,12 @@ import java.util.*;
 
 /** Deterministic simulation model with fault injection, advice, autonomy, replay, and scoring. */
 public final class SimulationEngine implements Copyable<SimulationEngine> {
+    private static final Map<LimitType, Double> DESIGN_LIMITS = Map.of(
+            LimitType.MAX_THROTTLE, 100d, LimitType.MAX_TEMPERATURE, 100d,
+            LimitType.MIN_BATTERY, 100d, LimitType.MIN_FUEL_RESERVE, 100d);
+    private static final Map<LimitType, Double> DEFAULT_LIMITS = Map.of(
+            LimitType.MAX_THROTTLE, 80d, LimitType.MAX_TEMPERATURE, 85d,
+            LimitType.MIN_BATTERY, 20d, LimitType.MIN_FUEL_RESERVE, 15d);
     private static final int HISTORY_LIMIT = 600;
     private static final ScenarioFactory SCENARIO_FACTORY = new ScenarioFactory();
     private static final List<String> SCENARIOS = SCENARIO_FACTORY.names();
@@ -128,10 +134,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
         currentAnomalies = List.of(); currentAdvice = List.of();
         commandChannel = new DirectChannel(); events.clear(); history.clear(); trail.clear(); crew.clear();
         limits.clear();
-        limits.put(LimitType.MAX_THROTTLE, 80d);
-        limits.put(LimitType.MAX_TEMPERATURE, 85d);
-        limits.put(LimitType.MIN_BATTERY, 20d);
-        limits.put(LimitType.MIN_FUEL_RESERVE, 15d);
+        limits.putAll(DEFAULT_LIMITS);
         uplinkEnabled = config.difficulty().uplinkByDefault();
         commandChannel = uplinkEnabled ? new DelayedChannel() : new DirectChannel();
         String[] names = {"Commander", "Flight Engineer", "Medical Officer", "Pilot"};
@@ -453,7 +456,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
             case "backup-sensor" -> { faults.remove(FaultType.SPIKE); faults.remove(FaultType.STUCK_VALUE); yield true; }
             case "backup-engine" -> { backupEngine = true; faults.remove(FaultType.ENGINE_MISFIRE); yield true; }
             case "backup-scrubber" -> { backupScrubber = true; faults.remove(FaultType.SCRUBBER_FAILURE); yield true; }
-            case "restore-limits" -> { limits.put(LimitType.MAX_THROTTLE, 80d); overridden = false; yield true; }
+            case "restore-limits" -> { limits.clear(); limits.putAll(DEFAULT_LIMITS); overridden = false; yield true; }
             default -> false;
         };
         if (applied) {
@@ -612,16 +615,16 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
     private void validateLimit(LimitType type, double value, boolean override) {
         Objects.requireNonNull(type);
         if (value < 0 || !Double.isFinite(value)) throw new IllegalArgumentException("Limit must be finite and non-negative");
-        if (value > 100 && !override) throw new IllegalArgumentException("Limit exceeds design value; enable override");
+        if (value > DESIGN_LIMITS.get(type) && !override) throw new IllegalArgumentException("Limit exceeds design value; enable override");
     }
 
     private void applyLimit(LimitType type, double value, boolean override) {
-        if (value > 100 && !override) throw new IllegalArgumentException("Limit exceeds design value; enable override");
-        if (value > 100) {
-            overridden = true;
+        if (value > DESIGN_LIMITS.get(type) && !override) throw new IllegalArgumentException("Limit exceeds design value; enable override");
+        if (value > DESIGN_LIMITS.get(type)) {
             emit(EventType.LIMIT_CHANGE, Severity.HIGH, "Limit override accepted: " + type + " = " + value);
         }
         limits.put(type, value);
+        overridden = limits.entrySet().stream().anyMatch(entry -> entry.getValue() > DESIGN_LIMITS.get(entry.getKey()));
         emit(EventType.LIMIT_CHANGE, Severity.INFO, "Operating limit changed: " + type + " = " + value);
     }
     public synchronized void setAutonomyMode(AutonomyMode value) {
@@ -706,7 +709,8 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
                 new ResourceSnapshot("Oxygen", oxygen, config.craftType().oxygen(), "%", (int) (oxygen / Math.max(0.1, crew.size() * 0.2))));
         List<SubsystemSnapshot> subsystems = buildSubsystems();
         List<LimitSnapshot> limitSnapshots = Arrays.stream(LimitType.values()).map(type ->
-                new LimitSnapshot(type, limits.get(type), type == LimitType.MAX_THROTTLE || type == LimitType.MAX_TEMPERATURE ? 100 : 100, overridden)).toList();
+                new LimitSnapshot(type, limits.get(type), DESIGN_LIMITS.get(type),
+                        limits.get(type) > DESIGN_LIMITS.get(type))).toList();
         List<Vec2> path = List.of(new Vec2(0, 0), new Vec2(config.destination().distance() * .25, 16),
                 new Vec2(config.destination().distance() * .75, -16), new Vec2(config.destination().distance(), 0));
         Vec2 actual = new Vec2(progress, courseError);

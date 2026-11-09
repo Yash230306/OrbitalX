@@ -49,7 +49,10 @@ public final class MainWindow extends JFrame {
         super("OrbitalIX | Mission Control");
         this.controller = controller;
         this.theme = readTheme();
-        for (String view : VIEWS) viewRegistry.register(view, () -> new MissionView(view, controller, theme));
+        for (String view : VIEWS) {
+            if (view.equals("Dashboard")) viewRegistry.register(view, () -> new DashboardView(controller, theme));
+            else viewRegistry.register(view, () -> new MissionView(view, controller, theme));
+        }
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setMinimumSize(new Dimension(1280, 800));
         setSize(1500, 920);
