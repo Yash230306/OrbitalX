@@ -49,6 +49,15 @@ public abstract class Subsystem implements SystemComponent, Copyable<Subsystem> 
         other.faults.clear();
         other.faults.addAll(faults);
         other.health = health;
+        Map<String, Sensor> targetSensors = new HashMap<>();
+        for (Sensor sensor : other.sensors) targetSensors.put(sensor.id(), sensor);
+        for (Sensor sensor : sensors) {
+            Sensor target = targetSensors.get(sensor.id());
+            if (target == null) throw new IllegalStateException("Copied subsystem is missing sensor " + sensor.id());
+            if (sensor instanceof com.orbitalix.sensor.BaseSensor source
+                    && target instanceof com.orbitalix.sensor.BaseSensor destination)
+                source.copyTelemetryTo(destination);
+        }
     }
 
     public abstract Subsystem copy(Spacecraft newOwner);

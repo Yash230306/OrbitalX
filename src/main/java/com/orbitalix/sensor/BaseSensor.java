@@ -55,10 +55,19 @@ public abstract class BaseSensor implements Sensor {
     protected final DoubleSupplier source() { return source; }
     protected abstract BaseSensor newCopy();
 
+    public final synchronized void copyTelemetryTo(BaseSensor target) {
+        Objects.requireNonNull(target);
+        if (!id.equals(target.id)) throw new IllegalArgumentException("Sensor IDs must match when copying telemetry");
+        synchronized (target) {
+            target.history.clear();
+            for (Reading reading : history) target.history.add(reading);
+            target.health = health;
+        }
+    }
+
     @Override public synchronized BaseSensor copy() {
         BaseSensor result = newCopy();
-        for (Reading reading : history) result.history.add(reading);
-        result.health = health;
+        copyTelemetryTo(result);
         return result;
     }
 }

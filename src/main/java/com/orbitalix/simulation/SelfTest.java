@@ -7,6 +7,11 @@ import com.orbitalix.config.CraftType;
 import com.orbitalix.config.Destination;
 import com.orbitalix.config.Difficulty;
 import com.orbitalix.api.FaultType;
+import com.orbitalix.api.EventType;
+import com.orbitalix.api.MissionEvent;
+import com.orbitalix.api.Severity;
+import com.orbitalix.detection.*;
+import com.orbitalix.event.EventBus;
 import com.orbitalix.fault.Fault;
 import com.orbitalix.fault.FaultFactory;
 import com.orbitalix.fault.FaultInjector;
@@ -19,10 +24,14 @@ import com.orbitalix.resource.FuelTank;
 import com.orbitalix.sensor.DriftDecorator;
 import com.orbitalix.sensor.GyroSensor;
 import com.orbitalix.sensor.SpikeDecorator;
+import com.orbitalix.sensor.TemperatureSensor;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** Headless regression matrix verifies seeded determinism and representative autonomy survival. */
 public final class SelfTest {
@@ -56,6 +65,7 @@ public final class SelfTest {
         failures += runApiChecks();
         failures += runSensorFaultResourceChecks();
         failures += runModelCrewChecks();
+        failures += runDetectionEventCopyChecks();
         System.out.println(failures == 0 ? "SELFTEST PASS (determinism and survival checks)" : "SELFTEST FAIL: " + failures + " assertion(s)");
         return failures == 0 ? 0 : 1;
     }
@@ -158,6 +168,53 @@ public final class SelfTest {
             // Throttle is checked against physical and configured limits.
         }
         if (failures != 0) System.err.println("Model/crew checks failed: " + failures);
+        return failures;
+    }
+
+    private static int runDetectionEventCopyChecks() {
+        int failures = 0;
+        TemperatureSensor hot = new TemperatureSensor("engine-temperature", 105);
+        List<Anomaly> thresholdFindings = new DetectionEngine(List.of(new ThresholdDetector())).scan(List.of(hot), 7);
+        if (thresholdFindings.size() != 1 || thresholdFindings.get(0).severity() != Severity.CRITICAL) failures++;
+
+        AtomicInteger sample = new AtomicInteger(90);
+        TemperatureSensor rising = new TemperatureSensor("trend-test", () -> sample.getAndIncrement());
+        for (int i = 0; i < 10; i++) rising.read();
+        TrendPredictor.Prediction prediction = new TrendPredictor().predict(rising, 100, true, 10).orElse(null);
+        if (prediction == null || prediction.ticksToThreshold() != 1) failures++;
+
+        AtomicInteger sequence = new AtomicInteger();
+        TemperatureSensor outlier = new TemperatureSensor("statistics-test",
+                () -> sequence.getAndIncrement() < 8 ? sequence.get() : 100);
+        for (int i = 0; i < 8; i++) outlier.read();
+        List<Anomaly> statistical = new DetectionEngine(List.of(new ZScoreDetector())).scan(List.of(outlier), 9);
+        if (statistical.size() != 1 || !statistical.get(0).detector().equals("Z-Score")) failures++;
+
+        EventBus bus = new EventBus();
+        List<MissionEvent> received = new ArrayList<>();
+        AutoCloseable subscription = bus.subscribe(EventBus.MISSION_EVENTS, received::add);
+        bus.publish(EventBus.MISSION_EVENTS, new MissionEvent(1, EventType.ANOMALY, Severity.HIGH, "test"));
+        try {
+            subscription.close();
+        } catch (Exception failure) {
+            failures++;
+        }
+        bus.publish(EventBus.MISSION_EVENTS, new MissionEvent(2, EventType.MISSION_END, Severity.INFO, "done"));
+        if (received.size() != 1 || received.get(0).tick() != 1 || bus.subscriberCount(EventBus.MISSION_EVENTS) != 0) failures++;
+
+        Spacecraft craft = new Spacecraft(MissionConfig.defaults());
+        craft.tick(SpaceEnvironment.nominal(craft.radiation(), 1));
+        Spacecraft craftCopy = craft.copy();
+        if (craft.subsystems().get(0).sensors().get(0).history().size()
+                != craftCopy.subsystems().get(0).sensors().get(0).history().size()) failures++;
+        com.orbitalix.model.Mission mission = new com.orbitalix.model.Mission(craft, Destination.MARS_TRANSFER);
+        mission.tick(SpaceEnvironment.nominal(craft.radiation(), 1));
+        com.orbitalix.model.Mission missionCopy = mission.copy();
+        int copiedTrailSize = missionCopy.orbit().trail().size();
+        missionCopy.tick(SpaceEnvironment.nominal(craft.radiation(), 1));
+        if (mission.orbit().trail().size() != copiedTrailSize || missionCopy.orbit().trail().size() != copiedTrailSize + 1) failures++;
+
+        if (failures != 0) System.err.println("Detection/event/copy checks failed: " + failures);
         return failures;
     }
 }

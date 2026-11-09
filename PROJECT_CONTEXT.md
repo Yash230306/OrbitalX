@@ -531,7 +531,7 @@ Do in this order. Each task must compile and run before starting the next.
 - [x] A2 (~60 min) `sensor` (interface, base, 9 sensors, 4 decorators), `resource`, `fault` (all 14 Fault classes, FaultFactory, FaultInjector)
 - [x] A3 (~70 min) `model` part 1: `SystemComponent`, `Subsystem` (Template Method), `Spacecraft`, `Mission`, `OperatingLimits`, `SpaceEnvironment`, `OrbitModel`, Propulsion, Power, Thermal, Communication, Attitude subsystems with the world rules of section 5
 - [x] A4 (~60 min) `model` part 2: LifeSupport, Navigation, Computer subsystems, `DependencyGraph`, and `crew` (4 CrewMember subclasses, CrewTask, CrewRoster)
-- [ ] A5 (~45 min) `detection`, `event` (EventBus, listeners), and the `Copyable` implementations across model, sensors, resources, faults, crew (needed for fork)
+- [x] A5 (~45 min) `detection`, `event` (EventBus, listeners), and the `Copyable` implementations across model, sensors, resources, faults, crew (needed for fork)
 - [ ] A6 (~80 min) `action` (20 actions + NoAction), `advisor` (15 rules), `autonomy` (3 policies, handler chain, AutopilotController), `state` (4 states)
 - [ ] A7 (~90 min) `simulation` (engine tick pipeline, 11 scenarios, ChaosDirector, controller facade), `comms` (Direct and Delayed channels), `scoring` (ScoreKeeper, 10 achievements), `replay` (History), `whatif` (PreviewService), `console` (Interpreter), `report` (Visitors), `Main` CLI mode and `--selftest`. **Tag R1.**
 
@@ -594,12 +594,12 @@ GUI screenshots (3 slides); demo scenarios and results; testing; conclusion and 
 - Last updated by: Copilot SDK in VS Code, 2026-11-10
 - Repo: https://github.com/Yash230306/OrbitalX (new private repository); branch `a1-a16-work`.
 - Release reached: none
-- Currently in progress: A1-A4 complete; A5-A17 remain.
-- Next step: Implement telemetry anomaly detectors, event bus/listeners, and complete copy support (A5).
+- Currently in progress: A1-A5 complete; A6-A17 remain.
+- Next step: Implement corrective actions, advisor rules, autonomy policies/handler chain, and state transitions (A6).
 - Compile command: `.\compile.bat`
 - Run commands: GUI: `.\run.bat`   Console: `.\run.bat --cli`   Selftest: `.\run.bat --selftest`   Screenshots: `.\run.bat --screenshots out\screenshots`
 - Decisions made: plain `javac --release 17` because Maven is unavailable; no external libraries.
-- Known issues: The new A3-A4 model is tested independently but is not yet integrated into the legacy simulation engine; that integration is scheduled for A7. A5-A17 detection, actions, autonomy, GUI, tuning, and documentation requirements remain.
+- Known issues: The new A3-A5 model/detection stack is tested independently but is not yet integrated into the legacy simulation engine; that integration is scheduled for A7. A6-A17 actions, autonomy, GUI, tuning, and documentation requirements remain.
 
 ## Progress log
 (AI: append one line per finished task, format `YYYY-MM-DD A1 done: <what exists now>`)
@@ -607,6 +607,7 @@ GUI screenshots (3 slides); demo scenarios and results; testing; conclusion and 
 - 2026-11-10 A2 done: nine typed sensors, four runtime decorators, bounded immutable sensor readings, four resource types, 14 fault implementations, fault factory/injector, and regression checks.
 - 2026-11-10 A3 done: spacecraft composite, operating limits, mission/orbit model, environment and five physical subsystems; model copy and physics regression checks pass.
 - 2026-11-10 A4 done: life-support, navigation, and computer subsystems; dependency graph; four crew roles, roster, command tasks, and crew-health/copy regression checks pass.
+- 2026-11-10 A5 done: threshold, rate-of-change, and z-score detectors; trend prediction; typed EventBus and console/file listeners; fork copies preserve sensor and orbit history.
 - 2026-11-10 A7 baseline: deterministic simulation/controller, scenario matrix, console commands, history/replay snapshots, reports, and self-test are implemented in a consolidated engine.
 - 2026-11-10 A14 baseline: ten themed Java2D views, control-room shell, CLI controls, settings, exports, and headless screenshot harness are implemented with simplified interactions/rendering.
 - 2026-11-10 A15 done: 108 scenario/difficulty/autonomy runs and API regression checks pass; FULL_AUTO survives NORMAL Cascading Failure while MANUAL loses.
