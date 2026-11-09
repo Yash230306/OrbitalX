@@ -3,11 +3,16 @@ package com.orbitalix.gui;
 import com.orbitalix.api.AutonomyMode;
 import com.orbitalix.api.MissionEventListener;
 import com.orbitalix.api.SimulationController;
+import com.orbitalix.api.EventType;
+import com.orbitalix.api.MissionEvent;
+import com.orbitalix.api.Severity;
 import com.orbitalix.gui.core.View;
 import com.orbitalix.gui.core.ViewRegistry;
 import com.orbitalix.gui.core.SplashScreen;
 import com.orbitalix.gui.core.BottomTicker;
 import com.orbitalix.gui.kit.ToastLayer;
+import com.orbitalix.gui.audio.SoundPlayer;
+import com.orbitalix.gui.audio.SynthSoundPlayer;
 import com.orbitalix.gui.theme.Themes;
 
 import javax.swing.*;
@@ -27,9 +32,16 @@ public final class MainWindow extends JFrame {
     private final ViewRegistry viewRegistry = new ViewRegistry();
     private final Timer simulationTimer;
     private final Timer animationTimer;
+    private final SoundPlayer soundPlayer;
+    private final MissionEffectsOverlay effectsOverlay;
+    private int shakeX, shakeY;
     private final JLayeredPane stage = new JLayeredPane() {
         @Override public void doLayout() {
-            for (Component component : getComponents()) component.setBounds(0, 0, getWidth(), getHeight());
+            for (Component component : getComponents()) {
+                int x = component == activeView ? shakeX : 0;
+                int y = component == activeView ? shakeY : 0;
+                component.setBounds(x, y, getWidth(), getHeight());
+            }
         }
     };
     private final ToastLayer toastLayer = new ToastLayer();
@@ -50,6 +62,8 @@ public final class MainWindow extends JFrame {
     public MainWindow(SimulationController controller) {
         super("OrbitalIX | Mission Control");
         this.controller = controller;
+        soundPlayer = SynthSoundPlayer.createDefault();
+        effectsOverlay = new MissionEffectsOverlay(controller);
         this.theme = readTheme();
         for (String view : VIEWS) {
             if (view.equals("Dashboard")) viewRegistry.register(view, () -> new DashboardView(controller, theme));
@@ -61,6 +75,7 @@ public final class MainWindow extends JFrame {
             else if (view.equals("Systems")) viewRegistry.register(view, () -> new SystemsView(controller, theme));
             else if (view.equals("Crew")) viewRegistry.register(view, () -> new CrewView(controller, theme));
             else if (view.equals("Replay")) viewRegistry.register(view, () -> new ReplayView(controller, theme));
+            else if (view.equals("Reports")) viewRegistry.register(view, () -> new ReportsView(controller, theme));
             else viewRegistry.register(view, () -> new MissionView(view, controller, theme));
         }
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -91,6 +106,8 @@ public final class MainWindow extends JFrame {
         splashTimer.setRepeats(false);
         splashTimer.start();
         toastListener = event -> {
+            effectsOverlay.trigger(event);
+            playEventSound(event);
             java.awt.Color color = switch (event.severity()) {
                 case INFO -> theme.accent();
                 case LOW, MEDIUM -> theme.warning();
@@ -107,8 +124,13 @@ public final class MainWindow extends JFrame {
         simulationTimer.start();
         animationTimer = new Timer(16, event -> {
             long now = System.nanoTime();
-            if (activeView != null) activeView.animateFrame(Math.min(.1, (now - lastAnimationNanos) / 1_000_000_000d));
+            double elapsed = Math.min(.1, (now - lastAnimationNanos) / 1_000_000_000d);
+            if (activeView != null) activeView.animateFrame(elapsed);
+            effectsOverlay.advanceFrame(elapsed);
             lastAnimationNanos = now;
+            shakeX = effectsOverlay.shakeOffsetX();
+            shakeY = effectsOverlay.shakeOffsetY();
+            stage.doLayout();
             if (replayIndicator != null) replayIndicator.setVisible(controller.snapshot().replaying());
             root.repaint();
             if (activeView != null) activeView.repaint();
@@ -134,6 +156,7 @@ public final class MainWindow extends JFrame {
         }
         activeView = viewRegistry.create(name);
         stage.add(activeView, JLayeredPane.DEFAULT_LAYER);
+        if (effectsOverlay.getParent() != stage) stage.add(effectsOverlay, JLayeredPane.PALETTE_LAYER);
         if (toastLayer.getParent() != stage) stage.add(toastLayer, JLayeredPane.PALETTE_LAYER);
         stage.revalidate();
         stage.repaint();
@@ -210,6 +233,24 @@ public final class MainWindow extends JFrame {
         }
     }
 
+    private void playClick() {
+        if (Boolean.parseBoolean(controller.getSetting("sound", "true"))) soundPlayer.click();
+    }
+
+    private void playEventSound(MissionEvent event) {
+        if (!Boolean.parseBoolean(controller.getSetting("sound", "true"))) return;
+        if (event.type() == EventType.ACHIEVEMENT || event.type() == EventType.MISSION_END) soundPlayer.chime();
+        else if (event.severity() == Severity.HIGH || event.severity() == Severity.CRITICAL) soundPlayer.alarm();
+        else if (event.severity() == Severity.LOW || event.severity() == Severity.MEDIUM) soundPlayer.caution();
+    }
+
+    private void toggleFullScreen() {
+        fullScreen = !fullScreen;
+        super.dispose();
+        setUndecorated(fullScreen);
+        setVisible(true);
+    }
+
     private void installShortcuts(JComponent root) {
         InputMap input = root.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap actions = root.getActionMap();
@@ -235,12 +276,7 @@ public final class MainWindow extends JFrame {
         });
         input.put(KeyStroke.getKeyStroke(KeyEvent.VK_F11, 0), "fullscreen");
         actions.put("fullscreen", new AbstractAction() {
-            @Override public void actionPerformed(java.awt.event.ActionEvent e) {
-                fullScreen = !fullScreen;
-                dispose();
-                setUndecorated(fullScreen);
-                setVisible(true);
-            }
+            @Override public void actionPerformed(java.awt.event.ActionEvent e) { toggleFullScreen(); }
         });
         input.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "escape");
         actions.put("escape", new AbstractAction() {
@@ -290,7 +326,7 @@ public final class MainWindow extends JFrame {
             button.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(theme.grid()),
                     new EmptyBorder(7, 11, 7, 11)));
             button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            button.addActionListener(event -> action.run());
+            button.addActionListener(event -> { playClick(); action.run(); });
             parent.add(button);
         }
 
@@ -315,7 +351,7 @@ public final class MainWindow extends JFrame {
                 button.setBackground(theme.panel());
                 button.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 4));
                 button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-                button.addActionListener(event -> showView(view));
+                button.addActionListener(event -> { playClick(); showView(view); });
                 add(button);
             }
         }
@@ -350,7 +386,7 @@ public final class MainWindow extends JFrame {
             controls.add(commandField, BorderLayout.EAST);
             JButton execute = new JButton("SEND");
             execute.setForeground(theme.foreground()); execute.setBackground(theme.panelRaised());
-            execute.addActionListener(event -> runCommand());
+            execute.addActionListener(event -> { playClick(); runCommand(); });
             controls.add(execute, BorderLayout.CENTER);
             add(controls, BorderLayout.CENTER);
         }
@@ -362,6 +398,7 @@ public final class MainWindow extends JFrame {
         if (activeView != null) activeView.close();
         if (bottomTicker != null) bottomTicker.close();
         if (toastListener != null) controller.removeEventListener(toastListener);
+        soundPlayer.close();
         super.dispose();
     }
 }

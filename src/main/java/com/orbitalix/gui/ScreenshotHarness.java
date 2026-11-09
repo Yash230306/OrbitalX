@@ -40,9 +40,11 @@ public final class ScreenshotHarness {
                             : view.equals("Systems") ? new SystemsView(renderController, theme)
                             : view.equals("Crew") ? new CrewView(renderController, theme)
                             : view.equals("Replay") ? new ReplayView(renderController, theme)
+                            : view.equals("Reports") ? new ReportsView(renderController, theme)
                             : new MissionView(view, renderController, theme);
                     panel.setSize(size[0], size[1]);
                     layoutRecursively(panel);
+                    panel.animateFrame(.5);
                     BufferedImage image = new BufferedImage(size[0], size[1], BufferedImage.TYPE_INT_ARGB);
                     Graphics2D graphics = image.createGraphics();
                     panel.paint(graphics);

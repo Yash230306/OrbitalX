@@ -18,8 +18,10 @@ import com.orbitalix.gui.CrewView;
 import com.orbitalix.gui.OrbitView;
 import com.orbitalix.gui.PlannerView;
 import com.orbitalix.gui.ReplayView;
+import com.orbitalix.gui.ReportsView;
 import com.orbitalix.gui.SettingsView;
 import com.orbitalix.gui.SystemsView;
+import com.orbitalix.gui.MissionEffectsOverlay;
 import com.orbitalix.gui.render3d.Camera;
 import com.orbitalix.gui.render3d.Renderer;
 import com.orbitalix.gui.render3d.SpacecraftModel;
@@ -96,6 +98,7 @@ public final class SelfTest {
         failures += runPlannerConsoleSettingsChecks();
         failures += runSystemsCrewChecks();
         failures += runReplayInteractionChecks();
+        failures += runReportsEffectsChecks();
         System.out.println(failures == 0 ? "SELFTEST PASS (determinism and survival checks)" : "SELFTEST FAIL: " + failures + " assertion(s)");
         return failures == 0 ? 0 : 1;
     }
@@ -602,6 +605,39 @@ public final class SelfTest {
         replay.dispatchEvent(mouse(replay, MouseEvent.MOUSE_RELEASED, 640, 184));
         failures += check(controller.snapshot().replaying() && replay.selectedTick() == 3, "Replay timeline scrubbing");
         replay.close();
+        return failures;
+    }
+
+    private static int runReportsEffectsChecks() {
+        int failures = 0;
+        SimulationEngine engine = new SimulationEngine();
+        DefaultSimulationController controller = new DefaultSimulationController(engine);
+        controller.setUplinkDelay(false);
+        controller.tick();
+        ReportsView reports = new ReportsView(controller, Themes.DARK_MISSION);
+        reports.setSize(1280, 720);
+        reports.doLayout();
+        reports.animateFrame(.5);
+        failures += check(reports.previewHtml().toLowerCase(Locale.ROOT).contains("<html")
+                && reports.achievementCount() == 10 && reports.gradeReveal() > 0, "Reports HTML preview, gallery, and grade stamp");
+        reports.dispatchEvent(mouse(reports, MouseEvent.MOUSE_CLICKED, 110, 646));
+        failures += check(reports.exportMessage().startsWith("EXPORTED")
+                && java.nio.file.Files.exists(java.nio.file.Path.of("out", "mission-report.html")), "Reports HTML export");
+        reports.dispatchEvent(mouse(reports, MouseEvent.MOUSE_CLICKED, 260, 646));
+        failures += check(reports.exportMessage().startsWith("EXPORTED")
+                && java.nio.file.Files.exists(java.nio.file.Path.of("out", "telemetry.csv")), "Reports CSV export");
+        reports.close();
+
+        MissionEffectsOverlay effects = new MissionEffectsOverlay(controller);
+        effects.setSize(1280, 720);
+        String oldEffectsSetting = controller.getSetting("effects", "true");
+        controller.setSetting("effects", "true");
+        effects.trigger(new MissionEvent(1, EventType.ANOMALY, Severity.CRITICAL, "test critical event"));
+        failures += check(effects.particleCount() == 24 && effects.tintStrength() > 0
+                && effects.shakeOffsetY() != 0, "Critical event visual effects");
+        effects.advanceFrame(1.2);
+        failures += check(effects.particleCount() == 0 && effects.tintStrength() == 0, "Visual effects decay");
+        controller.setSetting("effects", oldEffectsSetting);
         return failures;
     }
 

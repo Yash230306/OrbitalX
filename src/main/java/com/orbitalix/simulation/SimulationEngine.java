@@ -735,7 +735,9 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
                 events.stream().anyMatch(event -> event.type() == EventType.SELF_HEALING));
         List<String> achievements = scoreKeeper.earned(metrics).stream().map(Achievement::title).toList();
         List<String> allAchievements = scoreKeeper.achievements().stream().map(Achievement::title).toList();
-        ScoreSnapshot scoreSnapshot = new ScoreSnapshot((int) points, scoreKeeper.grade(points).name(), achievements, allAchievements);
+        List<String> lockedAchievements = allAchievements.stream().filter(title -> !achievements.contains(title)).toList();
+        ScoreSnapshot scoreSnapshot = new ScoreSnapshot((int) points, scoreKeeper.grade(points).name(),
+                achievements, lockedAchievements);
         return new SimulationSnapshot(tick, replaying, spacecraftStatus(), throttle, autonomy,
                 computerFreeze == 0, selfHealing, config, mission, subsystems, resources, limitSnapshots, recs,
                 threats, new OrbitSnapshot(new Vec2(0, 0), new Vec2(config.destination().distance(), 0), actual,
