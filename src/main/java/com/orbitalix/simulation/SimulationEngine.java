@@ -1,29 +1,58 @@
 package com.orbitalix.simulation;
 
 import com.orbitalix.api.*;
+import com.orbitalix.action.*;
+import com.orbitalix.advisor.*;
+import com.orbitalix.autonomy.AutopilotController;
+import com.orbitalix.autonomy.ResponseDecision;
 import com.orbitalix.config.*;
+import com.orbitalix.comms.*;
+import com.orbitalix.console.*;
+import com.orbitalix.detection.*;
+import com.orbitalix.event.EventBus;
+import com.orbitalix.model.*;
+import com.orbitalix.replay.History;
+import com.orbitalix.replay.ReplayController;
+import com.orbitalix.report.*;
+import com.orbitalix.scoring.*;
+import com.orbitalix.whatif.PreviewService;
 import com.orbitalix.util.DeterministicRandom;
-import com.orbitalix.util.RingBuffer;
 
 import java.util.*;
 
 /** Deterministic simulation model with fault injection, advice, autonomy, replay, and scoring. */
 public final class SimulationEngine implements Copyable<SimulationEngine> {
     private static final int HISTORY_LIMIT = 600;
-    private static final List<String> SCENARIOS = List.of("Free Flight", "Fuel Leak", "Engine Trouble",
-            "Power Crisis", "Lost in Space", "Antenna Blackout", "Hull Breach", "Solar Storm",
-            "Debris Alert", "Computer Crash", "Cascading Failure", "Endless Chaos");
+    private static final ScenarioFactory SCENARIO_FACTORY = new ScenarioFactory();
+    private static final List<String> SCENARIOS = SCENARIO_FACTORY.names();
+    private final ChaosDirector chaosDirector = new ChaosDirector();
+    private final EventBus eventBus = new EventBus();
+    private final ReplayController replayController = new ReplayController();
+    private final ScoreKeeper scoreKeeper = new ScoreKeeper();
+    private final PreviewService previewService = new PreviewService();
+    private final CommandRegistry commandRegistry = new CommandRegistry();
+    private final CommandParser commandParser = new CommandParser(commandRegistry);
+    private final DetectionEngine detectionEngine = new DetectionEngine();
+    private final AdvisorEngine advisorEngine = new AdvisorEngine();
     private final List<TickListener> tickListeners = new ArrayList<>();
-    private final List<MissionEventListener> eventListeners = new ArrayList<>();
     private final List<MissionEvent> events = new ArrayList<>();
-    private final RingBuffer<SimulationSnapshot> history = new RingBuffer<>(HISTORY_LIMIT);
+    private final History<SimulationSnapshot> history = new History<>(HISTORY_LIMIT);
     private final EnumMap<FaultType, Integer> faults = new EnumMap<>(FaultType.class);
     private final EnumMap<LimitType, Double> limits = new EnumMap<>(LimitType.class);
     private final LinkedHashMap<String, RecommendationSnapshot> recommendations = new LinkedHashMap<>();
-    private final ArrayDeque<UplinkSnapshot> uplinkQueue = new ArrayDeque<>();
+    private final LinkedHashMap<String, CorrectiveAction> modelActions = new LinkedHashMap<>();
+    private final LinkedHashMap<String, Recommendation> modelAdviceByLegacyId = new LinkedHashMap<>();
+    private final Set<String> activeAnomalyIds = new HashSet<>();
+    private CommandChannel commandChannel;
     private final ArrayList<Vec2> trail = new ArrayList<>();
     private final ArrayList<CrewState> crew = new ArrayList<>();
     private MissionConfig config;
+    private Scenario scenario;
+    private Spacecraft modelCraft;
+    private Mission modelMission;
+    private AutopilotController autopilotController;
+    private List<Anomaly> currentAnomalies = List.of();
+    private List<Recommendation> currentAdvice = List.of();
     private DeterministicRandom random;
     private int tick;
     private int throttle = 50;
@@ -40,6 +69,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
     private double oxygen;
     private double co2 = 0.5;
     private double temperature = 24;
+    private double maximumTemperature = 24;
     private double pressure = 101;
     private double radiation;
     private double courseError;
@@ -49,6 +79,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
     private int sealant;
     private int computerError;
     private int computerFreeze;
+    private int coolantRestartTicks;
     private int debrisImpact = -1;
     private int activeStormTicks;
     private boolean radiators = true;
@@ -64,28 +95,45 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
     private String outcome = "IN PROGRESS";
     private boolean overridden;
     private int previewCount;
+    private int debrisDodges;
+    private boolean criticalSeen;
+
+    {
+        for (String command : List.of("help", "status", "throttle", "inject", "autonomy", "heal", "uplink",
+                "exec", "dismiss", "limits", "crew", "task", "preview", "scenario", "seek", "report", "clear"))
+            commandRegistry.register(command, this::executeCommandLegacy);
+    }
 
     public SimulationEngine() { this(MissionConfig.defaults()); }
     public SimulationEngine(MissionConfig config) { configure(config); }
 
     public synchronized void configure(MissionConfig value) {
         config = Objects.requireNonNull(value);
+        scenario = SCENARIO_FACTORY.create(config.scenarioIndex());
+        modelCraft = new Spacecraft(config);
+        modelMission = new Mission(modelCraft, config.destination());
+        autopilotController = new AutopilotController(eventBus,
+                Math.max(1, (int) Math.ceil(config.difficulty().responseWindow() * 10)));
         random = new DeterministicRandom(config.seed());
         tick = 0; throttle = 50; autonomy = AutonomyMode.MANUAL; running = false; selfHealing = true;
         replaying = false; fuel = config.craftType().fuel(); reserveFuel = 20; battery = 85;
-        oxygen = config.craftType().oxygen(); co2 = 0.5; temperature = 24; pressure = 101; radiation = config.destination().radiationBase();
+        oxygen = config.craftType().oxygen(); co2 = 0.5; temperature = 24; maximumTemperature = 24;
+        pressure = 101; radiation = config.destination().radiationBase();
         courseError = 0; progress = 0; signal = 1; score = 0; sealant = config.craftType().sealant();
-        computerError = 0; computerFreeze = 0; debrisImpact = -1; activeStormTicks = 0;
+        computerError = 0; computerFreeze = 0; coolantRestartTicks = 0; debrisImpact = -1; activeStormTicks = 0;
         radiators = true; coolant = true; solarReoriented = false; backupAntenna = false; backupScrubber = false;
         nonEssential = true; shielded = false; backupEngine = false; reserveConnected = false; ended = false;
-        outcome = "IN PROGRESS"; overridden = false; previewCount = 0;
-        faults.clear(); recommendations.clear(); uplinkQueue.clear(); events.clear(); history.clear(); trail.clear(); crew.clear();
+        outcome = "IN PROGRESS"; overridden = false; previewCount = 0; debrisDodges = 0; criticalSeen = false;
+        faults.clear(); recommendations.clear(); modelActions.clear(); modelAdviceByLegacyId.clear(); activeAnomalyIds.clear();
+        currentAnomalies = List.of(); currentAdvice = List.of();
+        commandChannel = new DirectChannel(); events.clear(); history.clear(); trail.clear(); crew.clear();
         limits.clear();
         limits.put(LimitType.MAX_THROTTLE, 80d);
         limits.put(LimitType.MAX_TEMPERATURE, 85d);
         limits.put(LimitType.MIN_BATTERY, 20d);
         limits.put(LimitType.MIN_FUEL_RESERVE, 15d);
         uplinkEnabled = config.difficulty().uplinkByDefault();
+        commandChannel = uplinkEnabled ? new DelayedChannel() : new DirectChannel();
         String[] names = {"Commander", "Flight Engineer", "Medical Officer", "Pilot"};
         String[] roles = {"Commander", "Engineer", "Medical", "Pilot"};
         for (int i = 0; i < config.craftType().crew(); i++) crew.add(new CrewState(names[i], roles[i]));
@@ -105,6 +153,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
         applyAutonomy();
         advanceCrew();
         checkMissionEnd();
+        modelMission.synchronizeState(progress, tick, ended, outcome, courseError);
         updateScore();
         publishSnapshot();
     }
@@ -129,6 +178,8 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
         double targetTemperature = 20 + 0.75 * throttle + (nonEssential ? 5 : 0) - cooling;
         if (faults.containsKey(FaultType.OVERHEAT)) targetTemperature += 17;
         temperature += (targetTemperature - temperature) * 0.1;
+        maximumTemperature = Math.max(maximumTemperature, temperature);
+        if (coolantRestartTicks > 0 && --coolantRestartTicks == 0) coolant = true;
         if (faults.containsKey(FaultType.COOLANT_FAILURE)) coolant = false;
 
         double crewUse = crew.stream().filter(member -> member.health > 0).count() * 0.2;
@@ -181,42 +232,12 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
     }
 
     private void triggerScenarioFaults() {
-        int scenario = config.scenarioIndex();
-        if (scenario == 1 && tick == 20) injectFault("Propulsion", FaultType.FUEL_LEAK);
-        if (scenario == 2) {
-            if (tick == 20) injectFault("Propulsion", FaultType.ENGINE_MISFIRE);
-            if (tick == 35) injectFault("Thermal", FaultType.OVERHEAT);
-            if (tick == 50) injectFault("Thermal", FaultType.COOLANT_FAILURE);
-        }
-        if (scenario == 3 && tick == 15) injectFault("Power", FaultType.SOLAR_FAILURE);
-        if (scenario == 4) {
-            if (tick == 20) injectFault("Attitude", FaultType.SENSOR_DRIFT);
-            if (tick == 35) injectFault("Navigation", FaultType.NAV_DRIFT);
-        }
-        if (scenario == 5 && tick == 30) injectFault("Communication", FaultType.DROPOUT);
-        if (scenario == 6) {
-            if (tick == 25) injectFault("Life Support", FaultType.HULL_BREACH);
-            if (tick == 45) injectFault("Life Support", FaultType.SCRUBBER_FAILURE);
-        }
-        if (scenario == 7 && tick == 20) injectFault("Environment", FaultType.RADIATION_STORM);
-        if (scenario == 8 && (tick == 15 || tick == 55)) injectFault("Environment", FaultType.DEBRIS_THREAT);
-        if (scenario == 9) {
-            if (tick == 25) injectFault("Computer", FaultType.COMPUTER_FAULT);
-            if (tick == 30) injectFault("Environment", FaultType.RADIATION_STORM);
-        }
-        if (scenario == 10) {
-            if (tick == 15) injectFault("Propulsion", FaultType.FUEL_LEAK);
-            if (tick == 25) injectFault("Thermal", FaultType.OVERHEAT);
-            if (tick == 35) injectFault("Environment", FaultType.RADIATION_STORM);
-            if (tick == 45) injectFault("Environment", FaultType.DEBRIS_THREAT);
-            if (tick == 55) injectFault("Computer", FaultType.COMPUTER_FAULT);
-            if (tick == 65) injectFault("Life Support", FaultType.HULL_BREACH);
-        }
-        if (scenario == 11 && config.chaosDirector() && tick % 40 == 0) {
-            FaultType[] randomFaults = {FaultType.OVERHEAT, FaultType.FUEL_LEAK, FaultType.SOLAR_FAILURE, FaultType.NAV_DRIFT};
-            injectFault("Environment", randomFaults[random.nextInt(randomFaults.length)]);
-            emit(EventType.CHAOS, Severity.MEDIUM, "Chaos Director introduced a pressure-scaled fault");
-        }
+        for (Scenario.Trigger trigger : scenario.triggersAt(tick)) injectFault(trigger.target(), trigger.fault());
+        if (scenario.index() == 11 && config.chaosDirector())
+            chaosDirector.faultAt(tick, config.difficulty(), random).ifPresent(fault -> {
+                injectFault("Environment", fault);
+                emit(EventType.CHAOS, Severity.MEDIUM, "Chaos Director introduced a pressure-scaled fault");
+            });
     }
 
     private void advanceFaults() {
@@ -293,7 +314,63 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
                 recommendations.remove("backup-sensor");
             }
         }
+        syncModelFromEngine();
+        currentAnomalies = detectionEngine.scan(modelCraft.sensors(), tick);
+        Set<String> detectedIds = new HashSet<>();
+        for (Anomaly anomaly : currentAnomalies) {
+            detectedIds.add(anomaly.id());
+            if (!activeAnomalyIds.contains(anomaly.id()))
+                emit(EventType.ANOMALY, anomaly.severity(), anomaly.description());
+        }
+        activeAnomalyIds.retainAll(detectedIds);
+        activeAnomalyIds.addAll(detectedIds);
+        currentAdvice = advisorEngine.advise(modelCraft, currentAnomalies, tick);
+        modelActions.clear();
+        modelAdviceByLegacyId.clear();
+        for (Recommendation advice : currentAdvice) {
+            String legacyId = legacyRecommendationId(advice.id());
+            if (legacyId == null) continue;
+            if (!recommendations.containsKey(legacyId)) {
+                recommend(legacyId, advice.title(), advice.explanation(), advice.priority(), advice.risk());
+                modelActions.put(legacyId, advice.action());
+                modelAdviceByLegacyId.put(legacyId, advice);
+            }
+        }
     }
+
+    private String legacyRecommendationId(String ruleId) {
+        return switch (ruleId) {
+            case "fuel-low" -> "reduce-throttle";
+            case "overheating" -> "activate-radiators";
+            case "coolant-failure" -> "restart-coolant-pump";
+            case "power-shortage", "solar-failure" -> "shed-load";
+            case "communication-blackout" -> "backup-antenna";
+            case "gyro-drift", "navigation-drift" -> "recalibrate-gyro";
+            case "life-support" -> "backup-scrubber";
+            case "hull-breach" -> "seal-breach";
+            case "radiation-storm" -> "radiation-shelter";
+            case "debris-threat" -> "evade-debris";
+            case "computer-failure" -> "reboot-computer";
+            case "engine-misfire" -> "backup-engine";
+            case "limit-override" -> "restore-limits";
+            default -> null;
+        };
+    }
+
+    private void syncModelFromEngine() {
+        modelCraft.applyTelemetry(new SpacecraftTelemetry(throttle, fuel, reserveFuel, battery, oxygen, sealant,
+                temperature, pressure, co2, radiation, courseError, signal,
+                faults.containsKey(FaultType.ENGINE_MISFIRE) ? (backupEngine ? .85 : .55) : 1,
+                computerError, computerFreeze, coolantRestartTicks, nonEssential, radiators, coolant, backupAntenna, backupEngine,
+                backupScrubber, reserveConnected, solarReoriented, shielded, Set.copyOf(faults.keySet()),
+                Map.copyOf(limits), overridden));
+        modelMission.synchronizeState(progress, tick, ended, outcome, courseError);
+    }
+
+    public synchronized Spacecraft modelSpacecraft() { return modelCraft; }
+    public synchronized Mission modelMission() { return modelMission; }
+    public synchronized List<Anomaly> currentAnomalies() { return List.copyOf(currentAnomalies); }
+    public synchronized List<Recommendation> currentAdvice() { return List.copyOf(currentAdvice); }
 
     private void recommend(String id, String title, String explanation, int priority, ActionRisk risk) {
         recommendations.put(id, new RecommendationSnapshot(id, title, explanation, priority,
@@ -306,6 +383,27 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
         List<RecommendationSnapshot> ordered = recommendations.values().stream()
                 .sorted(Comparator.comparingInt(RecommendationSnapshot::priority).reversed()).toList();
         for (RecommendationSnapshot recommendation : ordered) {
+            Recommendation domainAdvice = modelAdviceByLegacyId.get(recommendation.id());
+            if (domainAdvice != null) {
+                ResponseDecision decision = autopilotController.respond(modelCraft, domainAdvice, autonomy, selfHealing, tick);
+                if (decision.handled() && decision.result() != null && decision.result().successful()) {
+                    syncEngineFromModel();
+                    recommendations.remove(recommendation.id());
+                    EventType eventType = switch (decision.decidedBy()) {
+                        case "SELF_HEALING" -> EventType.SELF_HEALING;
+                        case "CREW" -> EventType.CREW;
+                        case "AUTOPILOT" -> EventType.ACTION_BY_AUTOPILOT;
+                        default -> EventType.ACTION_BY_HUMAN;
+                    };
+                    emit(eventType, Severity.INFO, decision.decidedBy() + " executed " + recommendation.id()
+                            + ": " + decision.result().message());
+                } else if (decision.needsHuman()) {
+                    recommendations.put(recommendation.id(), new RecommendationSnapshot(recommendation.id(),
+                            recommendation.title(), recommendation.explanation(), recommendation.priority(),
+                            recommendation.ticksLeft(), "NEEDS HUMAN", "HUMAN", recommendation.risk(), true, true));
+                }
+                continue;
+            }
             if (autonomy == AutonomyMode.FULL_AUTO && recommendation.risk() == ActionRisk.COSTLY) {
                 applyAction(recommendation.id(), "AUTOPILOT");
             } else if (autonomy == AutonomyMode.TIMED_AUTOPILOT && tick % Math.max(1, recommendation.ticksLeft()) == 0) {
@@ -326,6 +424,21 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
     }
 
     private void applyAction(String id, String actor) {
+        CorrectiveAction modelAction = modelActions.get(id);
+        if (modelAction != null) {
+            syncModelFromEngine();
+            ActionResult result = modelAction.execute(modelCraft);
+            if (!result.successful()) {
+                emit(EventType.RECOMMENDATION, Severity.MEDIUM, id + " could not execute: " + result.message());
+                return;
+            }
+            syncEngineFromModel();
+            if (id.equals("evade-debris")) debrisImpact = -1;
+            recommendations.remove(id);
+            emit(actor.equals("HUMAN") ? EventType.ACTION_BY_HUMAN : EventType.ACTION_BY_AUTOPILOT,
+                    Severity.INFO, actor + " executed " + id + ": " + result.message());
+            return;
+        }
         boolean applied = switch (id) {
             case "reduce-throttle" -> { throttle = Math.min(throttle, 45); yield true; }
             case "cross-feed" -> { reserveConnected = true; yield true; }
@@ -344,9 +457,61 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
             default -> false;
         };
         if (applied) {
+            if (id.equals("evade-debris")) debrisDodges++;
             recommendations.remove(id);
             emit(actor.equals("HUMAN") ? EventType.ACTION_BY_HUMAN : EventType.ACTION_BY_AUTOPILOT,
                     Severity.INFO, actor + " executed " + id);
+        }
+    }
+
+    private void syncEngineFromModel() {
+        throttle = modelCraft.throttle();
+        fuel = modelCraft.fuel();
+        reserveFuel = modelCraft.fuelTank().reserveLevel();
+        battery = modelCraft.battery();
+        oxygen = modelCraft.oxygen();
+        sealant = (int) modelCraft.sealantStock().level();
+        temperature = modelCraft.temperature();
+        maximumTemperature = Math.max(maximumTemperature, temperature);
+        pressure = modelCraft.pressure();
+        co2 = modelCraft.co2();
+        radiation = modelCraft.radiation();
+        courseError = modelCraft.courseError();
+        signal = modelCraft.signalStrength();
+        nonEssential = modelCraft.nonEssentialSystemsOn();
+        radiators = modelCraft.radiatorsActive();
+        coolant = modelCraft.coolantWorking();
+        coolantRestartTicks = modelCraft.coolantRestartTicks();
+        backupAntenna = modelCraft.backupAntennaActive();
+        backupEngine = modelCraft.backupEngineActive();
+        backupScrubber = modelCraft.backupScrubberActive();
+        reserveConnected = modelCraft.reserveCrossFeed();
+        solarReoriented = modelCraft.solarPanelsReoriented();
+        shielded = modelCraft.isCrewSheltered();
+        computerError = modelCraft.computerError();
+        computerFreeze = modelCraft.computerFreeze();
+        overridden = modelCraft.limits().overridden();
+        limits.clear();
+        limits.putAll(modelCraft.limits().values());
+        Set<FaultType> active = modelCraft.activeFaults();
+        faults.keySet().removeIf(type -> !active.contains(type));
+        active.forEach(type -> faults.putIfAbsent(type, tick));
+        for (CrewState person : crew) {
+            modelCraft.crewRoster().members().stream()
+                    .filter(member -> member.name().equalsIgnoreCase(person.name)).findFirst().ifPresent(member -> {
+                        person.health = member.healthPercent();
+                        person.stress = member.stress();
+                        person.radiationDose = member.radiationDose();
+                        if (member.task() == null) {
+                            person.task = null;
+                            person.taskTicks = 0;
+                            person.targetFault = null;
+                        } else {
+                            person.task = member.task().type();
+                            person.taskTicks = member.task().remaining();
+                            person.targetFault = member.task().targetFault();
+                        }
+                    });
         }
     }
 
@@ -385,7 +550,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
 
     private void updateScore() {
         double crewHealth = crew.stream().mapToDouble(member -> member.health).average().orElse(0);
-        score = (ended && outcome.startsWith("SUCCESS") ? 500 : 0) + progress * 2 + fuel * 2 + battery + oxygen + crewHealth;
+        score = scoreKeeper.calculate(ended && outcome.startsWith("SUCCESS"), progress, fuel, battery, oxygen, crewHealth);
     }
 
     private double estimatedRequiredFuel() {
@@ -396,16 +561,15 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
     }
 
     private void processUplink() {
-        if (uplinkQueue.isEmpty()) return;
-        List<UplinkSnapshot> pending = new ArrayList<>(uplinkQueue);
-        uplinkQueue.clear();
-        for (UplinkSnapshot item : pending) {
-            if (item.ticksUntilExecution() <= 1) executeQueued(item.commandText());
-            else uplinkQueue.addLast(new UplinkSnapshot(item.commandText(), item.ticksUntilExecution() - 1));
-        }
+        commandChannel.advance(this::executeQueued);
     }
 
     private void executeQueued(String command) {
+        dispatchCommand(command);
+        emit(EventType.UPLINK, Severity.INFO, "Uplink command executed: " + command);
+    }
+
+    private void dispatchCommand(String command) {
         String[] parts = command.split(":", -1);
         switch (parts[0]) {
             case "throttle" -> throttle = Math.min(Integer.parseInt(parts[1]), limits.get(LimitType.MAX_THROTTLE).intValue());
@@ -416,7 +580,6 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
             case "crew" -> startCrewTask(parts[1], CrewTaskType.valueOf(parts[2]));
             default -> throw new IllegalArgumentException("Unknown queued uplink command: " + parts[0]);
         }
-        emit(EventType.UPLINK, Severity.INFO, "Uplink command executed: " + command);
     }
 
     public synchronized void injectFault(String target, FaultType type) {
@@ -487,12 +650,16 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
     }
     private void submitOrRun(String command, Runnable action) {
         if (uplinkEnabled) {
-            uplinkQueue.addLast(new UplinkSnapshot(command, config.destination().uplinkDelay()));
+            commandChannel.send(command, config.destination().uplinkDelay(), this::executeQueued);
             emit(EventType.UPLINK, Severity.INFO, "Uplink queued (" + config.destination().uplinkDelay() + " ticks): " + command);
-        } else action.run();
+        } else commandChannel.send(command, 0, ignored -> action.run());
     }
 
     public synchronized PreviewResult preview(String id, int lookahead) {
+        return previewService.preview(this, id, lookahead);
+    }
+
+    public synchronized PreviewResult runForecast(String id, int lookahead) {
         if (lookahead < 1 || lookahead > 500) throw new IllegalArgumentException("Lookahead must be 1..500 ticks");
         previewCount++;
         SimulationEngine forecast = copy();
@@ -510,22 +677,18 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
 
     public synchronized List<SimulationSnapshot> getHistory() { return history.stream().toList(); }
     public synchronized void seekTo(int value) {
-        SimulationSnapshot snapshot = history.stream().filter(item -> item.tick() == value).findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No recorded tick " + value));
+        SimulationSnapshot snapshot = replayController.require(history, value);
         replaying = true; replayTick = snapshot.tick();
-        tickListeners.forEach(listener -> listener.onTick(asReplay(snapshot)));
+        tickListeners.forEach(listener -> listener.onTick(replayController.asReplay(snapshot)));
     }
     public synchronized void resumeLive() { replaying = false; publishSnapshot(); }
     private SimulationSnapshot asReplay(SimulationSnapshot item) {
-        return new SimulationSnapshot(item.tick(), true, item.spacecraftState(), item.throttle(), item.autonomyMode(),
-                item.autopilotOnline(), item.selfHealing(), item.config(), item.mission(), item.subsystems(), item.resources(),
-                item.limits(), item.recommendations(), item.threats(), item.orbit(), item.crew(), item.score(), item.comms(),
-                item.dependencies());
+        return replayController.asReplay(item);
     }
 
     public synchronized SimulationSnapshot snapshot() {
         if (replaying) {
-            return history.stream().filter(item -> item.tick() == replayTick).findFirst().map(this::asReplay)
+            return replayController.at(history, replayTick).map(this::asReplay)
                     .orElseGet(this::liveSnapshot);
         }
         return liveSnapshot();
@@ -559,18 +722,22 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
                 new DependencySnapshot("Thermal", "Propulsion", status(FaultType.COOLANT_FAILURE), faults.containsKey(FaultType.COOLANT_FAILURE)),
                 new DependencySnapshot("Life Support", "Crew", status(FaultType.HULL_BREACH), faults.containsKey(FaultType.HULL_BREACH)));
         double points = score;
-        List<String> achievements = new ArrayList<>();
-        if (ended && outcome.startsWith("SUCCESS")) achievements.add("Mission Complete");
-        if (autonomy == AutonomyMode.FULL_AUTO && ended && outcome.startsWith("SUCCESS")) achievements.add("Hands-Off");
-        if (previewCount >= 5) achievements.add("Whatif Wizard");
-        ScoreSnapshot scoreSnapshot = new ScoreSnapshot((int) points, grade(points), achievements,
-                List.of("Fuel Miser", "Guardian Angel", "Phoenix", "Dodge This"));
+        MissionMetrics metrics = new MissionMetrics(ended && outcome.startsWith("SUCCESS"),
+                autonomy == AutonomyMode.FULL_AUTO, (int) events.stream().filter(event -> event.type() == EventType.ACTION_BY_HUMAN).count(),
+                overridden, criticalSeen, debrisDodges, config.scenarioIndex() == 10,
+                fuel / config.craftType().fuel() * 100,
+                crew.stream().mapToDouble(person -> person.health).average().orElse(0),
+                crew.stream().anyMatch(person -> person.health < 100), maximumTemperature, previewCount,
+                events.stream().anyMatch(event -> event.type() == EventType.SELF_HEALING));
+        List<String> achievements = scoreKeeper.earned(metrics).stream().map(Achievement::title).toList();
+        List<String> allAchievements = scoreKeeper.achievements().stream().map(Achievement::title).toList();
+        ScoreSnapshot scoreSnapshot = new ScoreSnapshot((int) points, scoreKeeper.grade(points).name(), achievements, allAchievements);
         return new SimulationSnapshot(tick, replaying, spacecraftStatus(), throttle, autonomy,
                 computerFreeze == 0, selfHealing, config, mission, subsystems, resources, limitSnapshots, recs,
                 threats, new OrbitSnapshot(new Vec2(0, 0), new Vec2(config.destination().distance(), 0), actual,
                 new Vec2(progress, 0), path, trail, predicted, courseError), crewSnapshots, scoreSnapshot,
                 new CommsSnapshot(uplinkEnabled ? config.destination().uplinkDelay() : 0, signal, signal < 0.1,
-                        List.copyOf(uplinkQueue)), dependencies);
+                        commandChannel.queue()), dependencies);
     }
 
     private List<SubsystemSnapshot> buildSubsystems() {
@@ -627,13 +794,13 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
         return "NOMINAL";
     }
     private HealthStatus status(FaultType type) { return faults.containsKey(type) ? HealthStatus.WARNING : HealthStatus.NOMINAL; }
-    private String grade(double points) { return points >= 900 ? "S" : points >= 750 ? "A" : points >= 600 ? "B" : points >= 450 ? "C" : points >= 300 ? "D" : "F"; }
     private static double clamp(double value, double min, double max) { return Math.max(min, Math.min(max, value)); }
 
     private void emit(EventType type, Severity severity, String message) {
         MissionEvent event = new MissionEvent(tick, type, severity, message);
+        if (severity == Severity.CRITICAL) criticalSeen = true;
         events.add(event);
-        for (MissionEventListener listener : List.copyOf(eventListeners)) listener.onEvent(event);
+        eventBus.publish(EventBus.MISSION_EVENTS, event);
     }
     private void publishSnapshot() {
         SimulationSnapshot value = liveSnapshot();
@@ -641,7 +808,10 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
         for (TickListener listener : List.copyOf(tickListeners)) listener.onTick(value);
     }
     public synchronized void addTickListener(TickListener listener) { tickListeners.add(Objects.requireNonNull(listener)); }
-    public synchronized void addEventListener(MissionEventListener listener) { eventListeners.add(Objects.requireNonNull(listener)); }
+    public synchronized void addEventListener(MissionEventListener listener) { eventBus.addListener(listener); }
+    public synchronized AutoCloseable subscribeEvents(MissionEventListener listener) {
+        return eventBus.subscribe(EventBus.MISSION_EVENTS, Objects.requireNonNull(listener)::onEvent);
+    }
     public synchronized List<MissionEvent> events() { return List.copyOf(events); }
     public synchronized List<String> scenarioNames() { return SCENARIOS; }
     public synchronized boolean running() { return running; }
@@ -654,7 +824,18 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
     public synchronized int speed() { return speed; }
     public synchronized void reset() { configure(config); }
     public synchronized void setSelfHealing(boolean value) { selfHealing = value; }
-    public synchronized void setUplinkDelay(boolean value) { uplinkEnabled = value; }
+    public synchronized void setUplinkDelay(boolean value) {
+        if (uplinkEnabled == value) return;
+        if (value) {
+            commandChannel = new DelayedChannel();
+        } else {
+            List<UplinkSnapshot> pending = commandChannel.drain();
+            DirectChannel direct = new DirectChannel();
+            commandChannel = direct;
+            pending.forEach(item -> direct.send(item.commandText(), 0, this::dispatchCommand));
+        }
+        uplinkEnabled = value;
+    }
     public synchronized void setAutonomy(AutonomyMode mode) { setAutonomyMode(mode); }
     public synchronized void loadScenario(int index) {
         if (index < 0 || index >= SCENARIOS.size()) throw new IllegalArgumentException("Unknown scenario: " + index);
@@ -664,7 +845,9 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
     public synchronized MissionConfig config() { return config; }
     public synchronized double fuel() { return fuel; }
     public synchronized int tickCount() { return tick; }
-    public synchronized String executeCommand(String line) {
+    public synchronized String executeCommand(String line) { return commandParser.execute(line); }
+
+    private synchronized String executeCommandLegacy(String line) {
         if (line == null || line.isBlank()) return "Enter a command. Type help.";
         String[] tokens = line.trim().split("\\s+");
         try {
@@ -750,14 +933,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
 
     public synchronized PreviewResult previewRecommendation(String id, int lookahead) { return preview(id, lookahead); }
     public synchronized String exportCsv() {
-        StringBuilder csv = new StringBuilder("tick,fuel,battery,oxygen,temperature,pressure,progress,status\n");
-        for (SimulationSnapshot item : history) {
-            csv.append(item.tick()).append(',').append(value(item, "Fuel")).append(',').append(value(item, "Battery"))
-                    .append(',').append(value(item, "Oxygen")).append(',').append(value(item, "Temperature")).append(',')
-                    .append(value(item, "Pressure")).append(',').append(item.mission().progressPercent()).append(',')
-                    .append(item.spacecraftState()).append('\n');
-        }
-        return csv.toString();
+        return new MissionReport(snapshot(), getHistory(), events()).accept(new CsvVisitor());
     }
     private static double value(SimulationSnapshot snapshot, String name) {
         return snapshot.resources().stream().filter(item -> item.name().equals(name)).mapToDouble(ResourceSnapshot::level)
@@ -765,13 +941,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
                         .filter(sensor -> sensor.sensorId().equalsIgnoreCase(name + "-sensor")).mapToDouble(SensorSnapshot::value).findFirst().orElse(0));
     }
     public synchronized String reportHtml() {
-        SimulationSnapshot now = snapshot();
-        return "<html><body style='font-family:sans-serif;background:#101722;color:#e8f1ff;padding:24px'>"
-                + "<h1>OrbitalIX Mission Report</h1><h2>" + now.mission().outcome() + "</h2><p>Ticks: " + now.tick()
-                + " | Progress: " + fmt(now.mission().progressPercent()) + "% | Fuel: " + fmt(fuel)
-                + " | Grade: " + now.score().grade() + "</p><h3>Event timeline</h3><ul>"
-                + events.stream().map(event -> "<li>T+" + event.tick() + " [" + event.severity() + "] " + event.message() + "</li>")
-                .reduce("", String::concat) + "</ul></body></html>";
+        return new MissionReport(snapshot(), getHistory(), events()).accept(new HtmlReportVisitor());
     }
     private static final class CrewState {
         private final String name;
@@ -790,7 +960,8 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
         clone.tick = tick; clone.throttle = throttle; clone.speed = speed; clone.autonomy = autonomy;
         clone.running = running; clone.selfHealing = selfHealing; clone.uplinkEnabled = uplinkEnabled;
         clone.fuel = fuel; clone.reserveFuel = reserveFuel; clone.battery = battery; clone.oxygen = oxygen;
-        clone.co2 = co2; clone.temperature = temperature; clone.pressure = pressure; clone.radiation = radiation;
+        clone.co2 = co2; clone.temperature = temperature; clone.maximumTemperature = maximumTemperature;
+        clone.pressure = pressure; clone.radiation = radiation;
         clone.courseError = courseError; clone.progress = progress; clone.signal = signal; clone.score = score;
         clone.sealant = sealant; clone.computerError = computerError; clone.computerFreeze = computerFreeze;
         clone.debrisImpact = debrisImpact; clone.activeStormTicks = activeStormTicks; clone.radiators = radiators;
@@ -798,8 +969,15 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
         clone.backupScrubber = backupScrubber; clone.nonEssential = nonEssential; clone.shielded = shielded;
         clone.backupEngine = backupEngine; clone.reserveConnected = reserveConnected; clone.ended = ended;
         clone.outcome = outcome; clone.overridden = overridden; clone.previewCount = previewCount;
+        clone.debrisDodges = debrisDodges; clone.criticalSeen = criticalSeen;
+        clone.modelCraft = modelCraft.copy();
+        clone.modelMission = new Mission(clone.modelCraft, config.destination());
+        clone.modelMission.synchronizeState(progress, tick, ended, outcome, courseError);
         clone.random = random.copy(); clone.faults.putAll(faults); clone.limits.putAll(limits);
-        clone.recommendations.putAll(recommendations); clone.uplinkQueue.addAll(uplinkQueue);
+        clone.recommendations.putAll(recommendations); clone.commandChannel = commandChannel.copy();
+        clone.modelActions.putAll(modelActions);
+        clone.modelAdviceByLegacyId.putAll(modelAdviceByLegacyId);
+        clone.activeAnomalyIds.addAll(activeAnomalyIds);
         clone.trail.addAll(trail);
         clone.events.clear();
         clone.events.addAll(events);

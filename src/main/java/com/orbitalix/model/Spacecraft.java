@@ -5,6 +5,7 @@ import com.orbitalix.config.CraftType;
 import com.orbitalix.crew.CrewRoster;
 import com.orbitalix.fault.FaultTarget;
 import com.orbitalix.resource.*;
+import com.orbitalix.sensor.Sensor;
 import com.orbitalix.state.*;
 import java.util.*;
 
@@ -105,6 +106,54 @@ public final class Spacecraft implements SystemComponent, FaultTarget, Copyable<
     public synchronized SpacecraftState state() { return state; }
     public synchronized void setState(SpacecraftState value) { state = Objects.requireNonNull(value); }
     public synchronized List<Subsystem> subsystems() { return List.copyOf(subsystems); }
+    public synchronized List<Sensor> sensors() {
+        return subsystems.stream().flatMap(subsystem -> subsystem.sensors().stream()).toList();
+    }
+    public synchronized void sampleSensors() { sensors().forEach(Sensor::read); }
+
+    public synchronized void applyTelemetry(SpacecraftTelemetry telemetry) {
+        Objects.requireNonNull(telemetry);
+        throttle = telemetry.throttle();
+        fuel.restoreLevel(telemetry.fuel());
+        fuel.restoreReserveLevel(telemetry.reserveFuel());
+        battery.restoreLevel(telemetry.battery());
+        oxygen.restoreLevel(telemetry.oxygen());
+        sealant.restoreLevel(telemetry.sealant());
+        temperature = telemetry.temperature();
+        pressure = Math.min(101, telemetry.pressure());
+        co2 = telemetry.co2();
+        radiation = telemetry.radiation();
+        courseError = telemetry.courseError();
+        signalStrength = Math.min(1, telemetry.signalStrength());
+        engineEfficiency = Math.min(1, telemetry.engineEfficiency());
+        computerError = telemetry.computerError();
+        computerFreeze = telemetry.computerFreeze();
+        coolantRestartTicks = telemetry.coolantRestartTicks();
+        computerOffline = computerFreeze > 0;
+        nonEssentialSystemsOn = telemetry.nonEssentialSystemsOn();
+        radiatorsActive = telemetry.radiatorsActive();
+        coolantWorking = telemetry.coolantWorking();
+        backupAntennaActive = telemetry.backupAntennaActive();
+        backupEngineActive = telemetry.backupEngineActive();
+        backupScrubberActive = telemetry.backupScrubberActive();
+        reserveCrossFeed = telemetry.reserveCrossFeed();
+        solarPanelsReoriented = telemetry.solarPanelsReoriented();
+        crewSheltered = telemetry.crewSheltered();
+        for (FaultType type : List.copyOf(faults.keySet()))
+            if (!telemetry.activeFaults().contains(type)) clearFault(type);
+        for (FaultType type : telemetry.activeFaults())
+            if (!faults.containsKey(type)) activateFault(type, 0);
+        limits.restoreSafeDefaults();
+        for (Map.Entry<LimitType, Double> limit : telemetry.limits().entrySet()) {
+            try {
+                limits.set(limit.getKey(), limit.getValue(), telemetry.overridden());
+            } catch (com.orbitalix.exception.LimitOverrideException failure) {
+                throw new IllegalStateException("Could not synchronize operating limit " + limit.getKey(), failure);
+            }
+        }
+        limits.restoreOverrideFlag(telemetry.overridden());
+        state = state.transition(health());
+    }
 
     public synchronized void tick(SpaceEnvironment environment) {
         for (Subsystem subsystem : subsystems) subsystem.update(this, environment);

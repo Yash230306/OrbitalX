@@ -27,7 +27,7 @@ public final class ThresholdDetector implements AnomalyDetector {
         put(defaults, Direction.ABOVE, 4, 6, "co2", "cabin-co2", "atmosphere");
         put(defaults, Direction.ABOVE, 3, 6, "radiation");
         put(defaults, Direction.ABOVE, 5, 10, "course", "gyro");
-        put(defaults, Direction.BELOW, .25, .1, "signal", "uplink");
+        put(defaults, Direction.BELOW, .25, .1, "signal", "uplink", "uplink-signal");
         put(defaults, Direction.ABOVE, 10, 15, "computer-errors");
         thresholds = Map.copyOf(defaults);
     }

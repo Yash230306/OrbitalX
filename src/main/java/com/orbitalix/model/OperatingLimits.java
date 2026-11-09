@@ -31,6 +31,7 @@ public final class OperatingLimits {
     public synchronized double get(LimitType type) { return require(type, values); }
     public synchronized double designValue(LimitType type) { return require(type, design); }
     public synchronized boolean overridden() { return overridden; }
+    public synchronized void restoreOverrideFlag(boolean value) { overridden = value; }
     public synchronized Map<LimitType, Double> values() { return Map.copyOf(values); }
 
     public synchronized void set(LimitType type, double value, boolean override) throws LimitOverrideException {

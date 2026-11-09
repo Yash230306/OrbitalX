@@ -27,6 +27,11 @@ public abstract class Resource implements Copyable<Resource>, Identifiable {
     public final double capacity() { return capacity; }
     public final synchronized double level() { return level; }
     public final synchronized double fraction() { return level / capacity; }
+    public final synchronized void restoreLevel(double value) {
+        if (!Double.isFinite(value) || value < 0 || value > capacity)
+            throw new IllegalArgumentException("Level must be within resource capacity");
+        level = value;
+    }
 
     public final synchronized double consume(double amount) {
         validateAmount(amount);

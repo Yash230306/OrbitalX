@@ -15,6 +15,11 @@ public final class FuelTank extends Resource {
     }
 
     public synchronized double reserveLevel() { return reserveLevel; }
+    public synchronized void restoreReserveLevel(double value) {
+        if (!Double.isFinite(value) || value < 0 || value > reserveCapacity)
+            throw new IllegalArgumentException("Reserve level must be within reserve capacity");
+        reserveLevel = value;
+    }
     public double reserveCapacity() { return reserveCapacity; }
     public synchronized double crossFeed(double requested) {
         if (!Double.isFinite(requested) || requested < 0) throw new IllegalArgumentException("Transfer must be non-negative");

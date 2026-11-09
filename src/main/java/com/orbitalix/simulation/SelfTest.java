@@ -15,6 +15,10 @@ import com.orbitalix.advisor.*;
 import com.orbitalix.autonomy.*;
 import com.orbitalix.detection.*;
 import com.orbitalix.event.EventBus;
+import com.orbitalix.comms.*;
+import com.orbitalix.report.*;
+import com.orbitalix.replay.History;
+import com.orbitalix.scoring.ScoreKeeper;
 import com.orbitalix.fault.Fault;
 import com.orbitalix.fault.FaultFactory;
 import com.orbitalix.fault.FaultInjector;
@@ -70,6 +74,7 @@ public final class SelfTest {
         failures += runModelCrewChecks();
         failures += runDetectionEventCopyChecks();
         failures += runActionAdvisorAutonomyChecks();
+        failures += runReleaseOneIntegrationChecks();
         System.out.println(failures == 0 ? "SELFTEST PASS (determinism and survival checks)" : "SELFTEST FAIL: " + failures + " assertion(s)");
         return failures == 0 ? 0 : 1;
     }
@@ -336,5 +341,62 @@ public final class SelfTest {
 
         if (failures != 0) System.err.println("Action/advisor/autonomy checks failed: " + failures);
         return failures;
+    }
+
+    private static int runReleaseOneIntegrationChecks() {
+        int failures = 0;
+        SimulationEngine engine = new SimulationEngine();
+        List<MissionEvent> events = new ArrayList<>();
+        engine.addEventListener(events::add);
+        engine.setSelfHealing(false);
+        engine.injectFault("Communication", FaultType.DROPOUT);
+        engine.injectFault("<script>", FaultType.DROPOUT);
+        engine.tick();
+        failures += check(engine.modelSpacecraft().fuel() == engine.fuel()
+                && Math.abs(engine.modelMission().progress() - engine.snapshot().mission().progressPercent()
+                * engine.config().destination().distance() / 100) <= 1e-9, "Engine/model state synchronization");
+        failures += check(engine.modelSpacecraft().subsystems().size() == 8
+                && engine.currentAnomalies().stream().anyMatch(anomaly -> anomaly.sensor().id().equals("uplink-signal"))
+                && engine.currentAdvice().stream().anyMatch(advice -> advice.id().equals("communication-blackout")),
+                "Detection and advisor integration");
+        failures += check(events.stream().anyMatch(event -> event.type() == EventType.ANOMALY), "Event bus integration");
+        failures += check(engine.reportHtml().contains("&lt;script&gt;")
+                && engine.exportCsv().startsWith("tick,fuel,battery"), "Report visitors and escaping");
+        try {
+            engine.executeCommand("unknown-command");
+            failures++;
+        } catch (IllegalArgumentException expected) {
+            // The interpreter rejects commands outside its registry.
+        }
+
+        DirectChannel direct = new DirectChannel();
+        AtomicInteger directCalls = new AtomicInteger();
+        direct.send("ping", 0, ignored -> directCalls.incrementAndGet());
+        failures += check(directCalls.get() == 1 && direct.queue().isEmpty(), "Direct command channel");
+        DelayedChannel delayed = new DelayedChannel();
+        AtomicInteger delayedCalls = new AtomicInteger();
+        delayed.send("ping", 3, ignored -> delayedCalls.incrementAndGet());
+        delayed.advance(ignored -> delayedCalls.incrementAndGet());
+        delayed.advance(ignored -> delayedCalls.incrementAndGet());
+        failures += check(delayedCalls.get() == 0 && delayed.queue().get(0).ticksUntilExecution() == 1, "Delayed command countdown");
+        delayed.advance(ignored -> delayedCalls.incrementAndGet());
+        failures += check(delayedCalls.get() == 1 && delayed.queue().isEmpty(), "Delayed command execution");
+
+        ScenarioFactory scenarios = new ScenarioFactory();
+        failures += check(scenarios.names().size() == 12
+                && scenarios.create(2).triggersAt(35).get(0).fault() == FaultType.OVERHEAT, "Scenario catalog");
+        failures += check(new ScoreKeeper().achievements().size() == 10, "Achievement catalog");
+        History<Integer> history = new History<>(2);
+        history.add(1); history.add(2); history.add(3);
+        failures += check(history.size() == 2 && history.get(0) == 2, "Bounded replay history");
+
+        if (failures != 0) System.err.println("Release-one integration checks failed: " + failures);
+        return failures;
+    }
+
+    private static int check(boolean passed, String label) {
+        if (passed) return 0;
+        System.err.println("Release-one check failed: " + label);
+        return 1;
     }
 }

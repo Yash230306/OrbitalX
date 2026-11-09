@@ -7,6 +7,7 @@ public final class RecalibrateGyroAction extends AbstractCorrectiveAction {
     @Override public ActionResult execute(Spacecraft craft) {
         craft.recalibrateCourse();
         craft.clearFault(FaultType.SENSOR_DRIFT);
+        craft.clearFault(FaultType.NAV_DRIFT);
         return success("Gyro recalibrated");
     }
 }

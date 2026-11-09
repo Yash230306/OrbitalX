@@ -533,7 +533,7 @@ Do in this order. Each task must compile and run before starting the next.
 - [x] A4 (~60 min) `model` part 2: LifeSupport, Navigation, Computer subsystems, `DependencyGraph`, and `crew` (4 CrewMember subclasses, CrewTask, CrewRoster)
 - [x] A5 (~45 min) `detection`, `event` (EventBus, listeners), and the `Copyable` implementations across model, sensors, resources, faults, crew (needed for fork)
 - [x] A6 (~80 min) `action` (20 actions + NoAction), `advisor` (15 rules), `autonomy` (3 policies, handler chain, AutopilotController), `state` (4 states)
-- [ ] A7 (~90 min) `simulation` (engine tick pipeline, 11 scenarios, ChaosDirector, controller facade), `comms` (Direct and Delayed channels), `scoring` (ScoreKeeper, 10 achievements), `replay` (History), `whatif` (PreviewService), `console` (Interpreter), `report` (Visitors), `Main` CLI mode and `--selftest`. **Tag R1.**
+- [x] A7 (~90 min) `simulation` (engine tick pipeline, 11 scenarios, ChaosDirector, controller facade), `comms` (Direct and Delayed channels), `scoring` (ScoreKeeper, 10 achievements), `replay` (History), `whatif` (PreviewService), `console` (Interpreter), `report` (Visitors), `Main` CLI mode and `--selftest`. **Tag R1.**
 
 **Release R2: the GUI core**
 - [ ] A8 (~90 min) GUI foundation: 4 themes, `gui.kit` widgets, `gui.anim`, `gui.audio` (synth + silent), `View` base class, `MainWindow` shell (NavRail, TopBar, BottomTicker, ToastLayer, SplashScreen), view registry, **`--screenshots` harness**
@@ -593,13 +593,13 @@ GUI screenshots (3 slides); demo scenarios and results; testing; conclusion and 
 ## HANDOFF STATE (AI: keep this updated. The next AI reads it first.)
 - Last updated by: Copilot SDK in VS Code, 2026-11-10
 - Repo: https://github.com/Yash230306/OrbitalX (new private repository); branch `a1-a16-work`.
-- Release reached: none
-- Currently in progress: A1-A6 complete; A7-A17 remain.
-- Next step: Integrate the model, detection, actions, and response chain into the simulation engine; complete scenarios, command channels, replay/scoring/reporting, CLI, and release gate (A7).
+- Release reached: R1 (A7)
+- Currently in progress: A1-A7 complete; A8-A17 remain. The existing GUI is a themed Java2D baseline; full widget, interaction, and visual QA requirements remain.
+- Next step: Implement the GUI foundation and polished shell (A8), then proceed through A9-A17 in order.
 - Compile command: `.\compile.bat`
 - Run commands: GUI: `.\run.bat`   Console: `.\run.bat --cli`   Selftest: `.\run.bat --selftest`   Screenshots: `.\run.bat --screenshots out\screenshots`
 - Decisions made: plain `javac --release 17` because Maven is unavailable; no external libraries.
-- Known issues: The new A3-A6 model/detection/action/advisor/autonomy stack is tested independently but is not yet integrated into the legacy simulation engine; that integration is scheduled for A7. A7-A17 integration, GUI, tuning, and documentation requirements remain.
+- Known issues: The application has a simplified GUI rather than all specified interactive widgets and views. A8-A17 still require implementation/verification; A16 screenshots so far only pass nonblank rendering checks, not full visual or interactive QA.
 
 ## Progress log
 (AI: append one line per finished task, format `YYYY-MM-DD A1 done: <what exists now>`)
@@ -610,6 +610,7 @@ GUI screenshots (3 slides); demo scenarios and results; testing; conclusion and 
 - 2026-11-10 A5 done: threshold, rate-of-change, and z-score detectors; trend prediction; typed EventBus and console/file listeners; fork copies preserve sensor and orbit history.
 - 2026-11-10 A6 done: 20 corrective commands plus NoAction, 15 priority rules, three autonomy strategies, four-handler recovery chain, and persistent safe mode; action/advisor/escalation regressions pass.
 - 2026-11-10 A7 baseline: deterministic simulation/controller, scenario matrix, console commands, history/replay snapshots, reports, and self-test are implemented in a consolidated engine.
+- 2026-11-10 A7 done: integrated scenario/chaos, uplink channels, replay/preview, scoring, reports, console, telemetry detection/advice, and autonomy response chain; compile and full `--selftest` pass.
 - 2026-11-10 A14 baseline: ten themed Java2D views, control-room shell, CLI controls, settings, exports, and headless screenshot harness are implemented with simplified interactions/rendering.
 - 2026-11-10 A15 done: 108 scenario/difficulty/autonomy runs and API regression checks pass; FULL_AUTO survives NORMAL Cascading Failure while MANUAL loses.
 - 2026-11-10 A16 partial: all 80 view/theme/resolution screenshots render and pass nonblank checks; interactive demo and shortcut verification remain.

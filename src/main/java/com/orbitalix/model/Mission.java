@@ -48,6 +48,15 @@ public final class Mission {
     public synchronized String outcome() { return outcome; }
     public synchronized Spacecraft spacecraft() { return spacecraft; }
     public synchronized OrbitModel orbit() { return orbit; }
+    public synchronized void synchronizeState(double progress, int tick, boolean ended, String outcome, double courseError) {
+        if (!Double.isFinite(progress) || progress < 0 || tick < this.tick || outcome == null)
+            throw new IllegalArgumentException("Invalid synchronized mission state");
+        if (tick > this.tick) orbit.record(progress, courseError);
+        this.progress = progress;
+        this.tick = tick;
+        this.ended = ended;
+        this.outcome = outcome;
+    }
     public synchronized Mission copy() {
         Mission result = new Mission(spacecraft.copy(), destination);
         result.progress = progress; result.tick = tick; result.ended = ended; result.outcome = outcome;
