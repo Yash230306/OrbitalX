@@ -11,6 +11,10 @@ import com.orbitalix.fault.Fault;
 import com.orbitalix.fault.FaultFactory;
 import com.orbitalix.fault.FaultInjector;
 import com.orbitalix.fault.FaultTarget;
+import com.orbitalix.crew.CrewMember;
+import com.orbitalix.crew.CrewRoster;
+import com.orbitalix.model.SpaceEnvironment;
+import com.orbitalix.model.Spacecraft;
 import com.orbitalix.resource.FuelTank;
 import com.orbitalix.sensor.DriftDecorator;
 import com.orbitalix.sensor.GyroSensor;
@@ -51,6 +55,7 @@ public final class SelfTest {
         }
         failures += runApiChecks();
         failures += runSensorFaultResourceChecks();
+        failures += runModelCrewChecks();
         System.out.println(failures == 0 ? "SELFTEST PASS (determinism and survival checks)" : "SELFTEST FAIL: " + failures + " assertion(s)");
         return failures == 0 ? 0 : 1;
     }
@@ -122,6 +127,37 @@ public final class SelfTest {
         injector.inject(target, finite);
         if (!finite.isActive() || !target.isFaultActive(FaultType.DROPOUT)) failures++;
         if (failures != 0) System.err.println("Sensor/fault/resource checks failed: " + failures);
+        return failures;
+    }
+
+    private static int runModelCrewChecks() {
+        int failures = 0;
+        Spacecraft craft = new Spacecraft(MissionConfig.defaults());
+        if (craft.subsystems().size() != 8 || craft.livingCrewCount() != craft.livingCrewCapacity()) failures++;
+        double initialPressure = craft.pressure();
+        craft.activateFault(FaultType.HULL_BREACH, 0);
+        craft.tick(SpaceEnvironment.nominal(craft.radiation(), 1));
+        if (craft.pressure() >= initialPressure || craft.oxygen() >= craft.oxygenSupply().capacity()) failures++;
+
+        craft.crewRoster().assign("Engineer", com.orbitalix.api.CrewTaskType.EVA_REPAIR,
+                FaultType.HULL_BREACH, true);
+        for (int i = 0; i < 8; i++) craft.tick(SpaceEnvironment.nominal(craft.radiation(), 1));
+        if (craft.isFaultActive(FaultType.HULL_BREACH)) failures++;
+
+        CrewMember original = craft.crewRoster().members().get(0);
+        Spacecraft clone = craft.copy();
+        CrewMember copied = clone.crewRoster().members().get(0);
+        copied.reduceStress(1);
+        if (original == copied || original.stress() == copied.stress()) failures++;
+        if (clone.crewRoster() == craft.crewRoster() || clone.subsystems().get(0) == craft.subsystems().get(0)) failures++;
+
+        try {
+            craft.setThrottle(101);
+            failures++;
+        } catch (IllegalArgumentException expected) {
+            // Throttle is checked against physical and configured limits.
+        }
+        if (failures != 0) System.err.println("Model/crew checks failed: " + failures);
         return failures;
     }
 }

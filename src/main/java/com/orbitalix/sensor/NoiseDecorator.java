@@ -1,9 +1,8 @@
 package com.orbitalix.sensor;
 
-import com.orbitalix.api.Copyable;
 import com.orbitalix.util.DeterministicRandom;
 
-public final class NoiseDecorator extends SensorDecorator implements Copyable<NoiseDecorator> {
+public final class NoiseDecorator extends SensorDecorator {
     private final double amplitude;
     private final DeterministicRandom random;
     public NoiseDecorator(Sensor delegate, double amplitude, long seed) {
