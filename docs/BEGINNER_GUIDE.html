@@ -447,120 +447,100 @@ quit</pre>
 </section>
 
 <section class="page">
-  <h2>8. Object-oriented design: the core of OrbitalX</h2>
-  <p>OOP is more than making a class for every noun. The important idea is that each object has a clear job, protects the data it owns, and collaborates with other objects through small contracts. In OrbitalX, the GUI, mission coordinator, spacecraft model, sensors, recovery actions, and reports are connected this way.</p>
-  <h3>How the application is connected</h3>
-  <pre>MainWindow and its Views
-        | call (they do not edit the engine)
-        v
-SimulationController       interface / shared contract
-        ^ implemented by
-DefaultSimulationController  facade that delegates requests
-        | owns and calls
-        v
-SimulationEngine             coordinates each mission tick
-   | composes and coordinates
-   +-- Spacecraft
-   |     +-- eight Subsystems -- each owns Sensors
-   |     +-- FuelTank, Battery, OxygenSupply, SealantStock
-   |     +-- CrewRoster -- CrewMembers and their tasks
-   +-- DetectionEngine --> AdvisorEngine --> CorrectiveAction objects
-   +-- AutopilotController --> response-handler chain
-   +-- EventBus, History / Replay, scoring, and reports
-        |
-        +-- publishes immutable SimulationSnapshot
-                    |
-                    v
-              GUI Views / Replay / Reports</pre>
-  <p>The arrows show responsibilities and calls, not just folders. For example, a Dashboard button calls the <code>SimulationController</code> contract; <code>DefaultSimulationController</code> forwards the request to <code>SimulationEngine</code>; the engine updates the mission and publishes a new snapshot; views redraw from that snapshot.</p>
-  <h3>Why composition is central</h3>
-  <p><code>Spacecraft</code> is a composed object: it holds resources, operating limits, a crew roster, and a list of subsystems. Each subsystem in turn contains sensors. If fuel runs low, the problem belongs to the fuel resource and propulsion subsystem; the Dashboard need not know how those internal objects store their state.</p>
-  <p class="small">Key implementation examples: <code>model/Spacecraft.java</code>, <code>model/Subsystem.java</code>, <code>resource/Resource.java</code>, <code>sensor/Sensor.java</code>, and <code>crew/CrewRoster.java</code>.</p>
-  <h3>A mission tick is object collaboration</h3>
+  <h2>8. How OOP powers a real OrbitalX feature</h2>
+  <p>Follow one actual user-facing feature: the Dashboard displays a fuel recommendation, the operator previews or executes it, and OrbitalX reduces the spacecraft's throttle. These steps happen because specific objects collaborate—not because the program merely defines classes with OOP-sounding names.</p>
+  <figure class="figure">
+    <img src="screenshots/guide-dashboard-dark.png" alt="OrbitalX Dashboard showing live gauges and a fuel-margin recommendation with Preview Execute and Dismiss controls">
+    <figcaption>The Dashboard used in this walkthrough. Its recommendation buttons call the simulation API; they do not directly modify spacecraft fields.</figcaption>
+  </figure>
+  <pre>Dashboard / MissionView
+  -> SimulationController
+  -> DefaultSimulationController
+  -> SimulationEngine
+  -> Recommendation / CorrectiveAction object
+  -> Spacecraft and FuelTank</pre>
   <ol>
-    <li><code>SimulationEngine.tick()</code> advances one simulation step and coordinates physics, scheduled faults, and mission progress.</li>
-    <li>The engine updates the spacecraft's telemetry; sensors provide readings to <code>DetectionEngine</code>, which uses anomaly detectors and trend prediction.</li>
-    <li><code>AdvisorEngine</code> applies recommendation rules and creates advice backed by a <code>CorrectiveAction</code> object.</li>
-    <li><code>AutopilotController</code> selects an autonomy policy and offers the response through self-healing, autopilot, crew, then escalation.</li>
-    <li>The engine publishes events and a <code>SimulationSnapshot</code>; the GUI, replay, and reporting code consume those results.</li>
+    <li><strong>The model owns the state.</strong> <code>SimulationEngine</code> has a <code>Spacecraft</code>; the spacecraft composes a <code>FuelTank</code>, its other resources, eight subsystems, and a crew roster. Resource values are not stored in the Dashboard.</li>
+    <li><strong>The engine asks domain objects for advice.</strong> During <code>tick()</code>, the engine updates its model, calls <code>DetectionEngine.scan(...)</code>, then calls <code>AdvisorEngine.advise(modelCraft, ...)</code>.</li>
+    <li><strong>A rule constructs a concrete action.</strong> <code>FuelLowRule</code> checks the spacecraft's fuel and supplies <code>ReduceThrottleAction</code> when its condition matches. The resulting <code>Recommendation</code> keeps the action with the advice.</li>
+    <li><strong>The view sends a request through a contract.</strong> <code>MissionView.handleDashboardClick(...)</code> calls <code>controller.previewRecommendation(...)</code>, <code>executeRecommendation(...)</code>, or <code>dismissRecommendation(...)</code>, depending on the button.</li>
+    <li><strong>The facade forwards it.</strong> <code>DefaultSimulationController</code> implements <code>SimulationController</code> and forwards the requested operation to <code>SimulationEngine</code>.</li>
+    <li><strong>The action changes the model safely.</strong> The engine retrieves the <code>CorrectiveAction</code> for the recommendation and calls <code>execute(modelCraft)</code>. The concrete <code>ReduceThrottleAction</code> respects the craft's maximum-throttle limit before changing throttle.</li>
+    <li><strong>All views get updated data.</strong> The engine publishes a new <code>SimulationSnapshot</code>. Views update their snapshot and repaint, so Dashboard, Systems, and Reports can show the same current mission.</li>
   </ol>
+  <p class="small">Follow these methods in <code>simulation/SimulationEngine.java</code>, <code>advisor/FuelLowRule.java</code>, <code>action/ReduceThrottleAction.java</code>, <code>gui/MissionView.java</code>, and <code>simulation/DefaultSimulationController.java</code>.</p>
 </section>
 
 <section class="page">
-  <h2>OOP building blocks in real project code</h2>
-  <p>These are the main object-oriented ideas in the implementation. Notice how each one supports a feature you can see or use in the application.</p>
+  <h2>OOP concepts, mapped to implemented features</h2>
+  <p>This table identifies where each concept is actually used and what job it performs in OrbitalX.</p>
   <table>
-    <tr><th>Concept</th><th>OrbitalX example</th><th>Why it matters to the user</th></tr>
-    <tr><td><strong>Abstraction</strong></td><td><code>SimulationController</code> defines mission operations; <code>Sensor</code> defines sensor behavior without specifying each instrument's internals.</td><td>The GUI and CLI can request status, tick, preview, or actions without depending on engine internals. Different sensors can be used through the same contract.</td></tr>
-    <tr><td><strong>Encapsulation</strong></td><td><code>Spacecraft</code>, <code>Resource</code>, and <code>BaseSensor</code> keep important fields private and expose guarded methods. <code>SimulationSnapshot</code> copies its lists.</td><td>Throttle, resource levels, and telemetry history change through checks; screens receive stable data instead of modifying hidden simulation state.</td></tr>
-    <tr><td><strong>Inheritance</strong></td><td><code>BaseSensor</code> is extended by concrete sensors; <code>Subsystem</code> has concrete subsystem types; GUI views share the <code>View</code> base.</td><td>Shared behavior is implemented once while specialized types keep their own measurement, physics, or drawing behavior.</td></tr>
-    <tr><td><strong>Polymorphism</strong></td><td>The engine works with <code>Sensor</code>, <code>CorrectiveAction</code>, <code>AnomalyDetector</code>, and <code>ReportVisitor</code> contracts.</td><td>The same operation can use different sensor readings, recovery actions, detector algorithms, or report formats without rewriting the caller.</td></tr>
-    <tr><td><strong>Composition</strong></td><td><code>Spacecraft</code> contains subsystems/resources/crew; <code>SimulationEngine</code> coordinates domain, detection, advice, autonomy, events, and history.</td><td>A mission is assembled from cooperating parts. A thermal problem, for example, can be tracked by a sensor, detected, recommended, acted on, and reported.</td></tr>
+    <tr><th>Concept</th><th>Where OrbitalX uses it</th><th>What this does in the running project</th></tr>
+    <tr><td><strong>Abstraction through interfaces</strong></td><td><code>SimulationController</code> defines the operations used by GUI views. <code>Sensor</code>, <code>AnomalyDetector</code>, <code>CorrectiveAction</code>, and <code>ReportVisitor</code> define other interchangeable roles.</td><td>The GUI requests mission actions through a stable API; the engine can scan different detectors, run different actions, and produce different report formats without coupling every caller to each implementation.</td></tr>
+    <tr><td><strong>Encapsulation</strong></td><td><code>Spacecraft</code> keeps state private; <code>Resource.consume/refill</code> validate changes; <code>SimulationSnapshot</code> and <code>SubsystemSnapshot</code> copy their lists.</td><td>The throttle limit and resource capacity are enforced where the data is owned. Views receive data to display instead of direct access to mutable engine internals.</td></tr>
+    <tr><td><strong>Inheritance</strong></td><td><code>BaseSensor</code> shares reading/history logic with concrete sensors; concrete subsystems specialize <code>Subsystem</code>; <code>SystemsView</code> extends <code>MissionView</code>, which extends <code>View</code>.</td><td>Sensors and screens reuse shared identity, telemetry, tick updates, and rendering lifecycle while providing their own measurement, physics, or display behavior.</td></tr>
+    <tr><td><strong>Polymorphism</strong></td><td><code>DetectionEngine</code> loops over <code>AnomalyDetector</code> implementations; <code>AdvisorEngine</code> loops over <code>RecommendationRule</code>s; the engine executes a <code>CorrectiveAction</code> through its interface.</td><td>The same scan, advice, or execution call works with the actual threshold/rate detector, fuel rule, or throttle action selected for that mission. The caller does not need a separate workflow for each concrete object.</td></tr>
+    <tr><td><strong>Composition</strong></td><td><code>Spacecraft</code> owns resources, a crew roster, and subsystems; each <code>Subsystem</code> owns sensors. <code>SimulationEngine</code> coordinates domain and service objects.</td><td>The spacecraft and mission are built from components with distinct responsibilities. A fault can change a subsystem, affect sensor readings, influence advice, and appear in reports.</td></tr>
   </table>
-  <h3>Example 1 — interface and facade</h3>
-  <p>A view depends on the public contract, not the concrete engine. The facade implements that contract and forwards work:</p>
-  <pre>public interface SimulationController {
-    SimulationSnapshot snapshot();
-    void setThrottle(int percent);
-}
+  <h3>Real polymorphism in detection</h3>
+  <p>These are actual lines from <code>DetectionEngine.scan(...)</code> and <code>AdvisorEngine.advise(...)</code>. Java calls each object's own implementation through the interface type:</p>
+  <pre>for (AnomalyDetector detector : detectors)
+    detector.detect(sensor, tick).ifPresent(anomalies::add);
 
-public final class DefaultSimulationController implements SimulationController {
-    private final SimulationEngine engine;
-
-    public SimulationSnapshot snapshot() { return engine.snapshot(); }
-}</pre>
-  <p>This boundary is why the Dashboard and Console use the same mission. A second controller implementation could be substituted without making every view depend on <code>SimulationEngine</code>.</p>
-  <h3>Example 2 — encapsulated state and a safe view</h3>
-  <pre>private final FuelTank fuel;
-private final List&lt;Subsystem&gt; subsystems;
-
-public synchronized List&lt;Subsystem&gt; subsystems() {
-    return List.copyOf(subsystems);
-}</pre>
-  <p>The spacecraft owns its fuel and subsystem collection. It does not hand its mutable internal list to a screen. Likewise, the <code>Resource</code> class validates consumption and refills, and the API's snapshot records copy collection inputs.</p>
+for (RecommendationRule rule : rules)
+    rule.evaluate(spacecraft, anomalies, tick)
+         .ifPresent(recommendations::add);</pre>
+  <p>The configured detector objects include <code>ThresholdDetector</code>, <code>RateOfChangeDetector</code>, and <code>ZScoreDetector</code>. Advice uses individual rule objects such as <code>FuelLowRule</code> and <code>OverheatingRule</code>. Adding or changing one implementation does not require putting its internals into the GUI.</p>
+  <h3>The selected action also has its own implementation</h3>
+  <p>This excerpt is from <code>ReduceThrottleAction.execute(...)</code>. The engine calls it through <code>CorrectiveAction</code>; Java dispatches to this concrete action, which enforces the throttle limit before updating the spacecraft:</p>
+  <pre>int permitted = (int) Math.min(target,
+        craft.limits().get(LimitType.MAX_THROTTLE));
+if (craft.throttle() &lt;= permitted)
+    return success("Throttle already within target");
+craft.setThrottle(permitted);
+return success("Throttle reduced to " + permitted + "%");</pre>
+  <h3>Inheritance that supports actual screens</h3>
+  <p><code>View</code> owns the shared controller, theme, current snapshot, and tick-listener behavior. <code>MissionView</code> supplies the shared mission-control canvas. <code>SystemsView</code> and <code>DashboardView</code> specialize it with different drawing and interactions. The reusable part is the live-view lifecycle; the specialized part is each screen's job.</p>
 </section>
 
 <section class="page">
-  <h2>OOP at work: one sensor reading to one report</h2>
-  <h3>Polymorphism: one call, specialized objects</h3>
-  <p>A <code>Sensor</code> contract describes operations such as <code>read()</code>. Concrete sensors specialize the shared <code>BaseSensor</code>; the spacecraft can sample them without an <code>if</code> for every sensor type:</p>
-  <pre>public synchronized void sampleSensors() {
-    sensors().forEach(Sensor::read);
-}</pre>
-  <p>At runtime, Java dispatches <code>read()</code> to the actual sensor object. This same pattern appears in <code>Subsystem</code>, corrective actions, anomaly detectors, autonomy policies, and report visitors.</p>
-  <h3>Patterns that make the features work</h3>
+  <h2>OOP also drives autonomy and reporting</h2>
+  <p>The other major features use the same object-collaboration approach. These are not theoretical examples: they are the classes the mission engine uses.</p>
   <table>
-    <tr><th>Pattern</th><th>Classes / contracts</th><th>Feature it enables</th></tr>
-    <tr><td><strong>Facade + MVC boundary</strong></td><td><code>DefaultSimulationController</code> implements <code>SimulationController</code>.</td><td>Separates GUI/CLI commands from engine internals.</td></tr>
-    <tr><td><strong>Strategy</strong></td><td><code>AutonomyPolicy</code> implementations; interchangeable <code>AnomalyDetector</code> objects.</td><td>Selects manual, timed, or full-autonomy response behavior and combines detection methods.</td></tr>
-    <tr><td><strong>Command</strong></td><td><code>CorrectiveAction</code> and its concrete actions.</td><td>Recommendations can be described, previewed, executed, or dismissed as separate actions.</td></tr>
-    <tr><td><strong>Chain of Responsibility</strong></td><td><code>SelfHealingHandler</code>, <code>AutopilotHandler</code>, <code>CrewHandler</code>, <code>EscalationHandler</code>.</td><td>A response is offered in order; an eligible handler handles it, otherwise it passes on for human attention.</td></tr>
-    <tr><td><strong>Observer</strong></td><td><code>EventBus</code>, mission-event listeners, and tick listeners.</td><td>Views, logs, and other listeners can react to mission updates without the engine knowing each display.</td></tr>
-    <tr><td><strong>Visitor</strong></td><td><code>MissionReport.accept(ReportVisitor)</code>, <code>HtmlReportVisitor</code>, <code>CsvVisitor</code>.</td><td>The same report data can be exported into different formats.</td></tr>
-    <tr><td><strong>Factory / Prototype / history</strong></td><td><code>FaultFactory</code> creates fault types; controller/engine <code>fork()</code> supports a copy; history stores snapshots.</td><td>Creates the right fault object, supports isolated preview/what-if work, and enables Replay.</td></tr>
+    <tr><th>Feature in OrbitalX</th><th>How the actual objects work together</th></tr>
+    <tr><td><strong>Manual / timed / full autonomy</strong></td><td><code>AutopilotController</code> selects a concrete <code>AutonomyPolicy</code> for the selected mode and submits a <code>ResponseContext</code> to <code>SelfHealingHandler → AutopilotHandler → CrewHandler → EscalationHandler</code>. A handler either handles the recommendation or passes it to the next.</td></tr>
+    <tr><td><strong>Recommendations and actions</strong></td><td>A recommendation rule associates a condition with a concrete <code>CorrectiveAction</code>. The action exposes its ID, explanation, risk, and execution behavior, enabling the UI to show Preview / Execute / Dismiss.</td></tr>
+    <tr><td><strong>Mission updates</strong></td><td><code>SimulationEngine</code> notifies tick listeners with snapshots and publishes typed events through <code>EventBus</code>. GUI views, logs, and listeners respond without each being hard-wired into the physics update.</td></tr>
+    <tr><td><strong>Replay and what-if preview</strong></td><td>The engine records immutable <code>SimulationSnapshot</code> values in history. A forked controller wraps a copied engine, allowing preview work to stay separate from the live run.</td></tr>
+    <tr><td><strong>HTML and CSV reports</strong></td><td><code>MissionReport.accept(visitor)</code> hands the same report data to <code>HtmlReportVisitor</code> or <code>CsvVisitor</code>; each object creates a different output format.</td></tr>
   </table>
-  <h3>Important nuance</h3>
-  <p>OrbitalX uses OOP where objects and contracts clarify responsibilities; not every choice is dynamically dispatched. Some finite command or enum selections use explicit switches because that is simpler and clearer. The goal is understandable boundaries—not inheritance everywhere.</p>
-  <h3>Where to explore next</h3>
-  <p>The source map <code>docs\OOP_CONCEPT_MAP.md</code> lists more examples and language features. The class diagrams in <code>docs\puml\</code> show the GUI/API boundary, model and crew, advisor/autonomy flow, and design patterns. <code>docs\ARCHITECTURE.md</code> describes the runtime flow.</p>
+  <h3>Useful project files for a presentation</h3>
+  <ul>
+    <li><code>simulation/SimulationEngine.java</code> — mission tick, service composition, advice, execution, and snapshots.</li>
+    <li><code>model/Spacecraft.java</code>, <code>model/Subsystem.java</code>, <code>resource/Resource.java</code> — composition and protected mission state.</li>
+    <li><code>sensor/Sensor.java</code>, <code>detection/DetectionEngine.java</code>, <code>advisor/AdvisorEngine.java</code> — interfaces and runtime polymorphism.</li>
+    <li><code>advisor/FuelLowRule.java</code>, <code>action/ReduceThrottleAction.java</code> — one concrete recommendation and its concrete action.</li>
+    <li><code>api/SimulationController.java</code>, <code>simulation/DefaultSimulationController.java</code>, <code>gui/MissionView.java</code> — the UI-to-engine boundary.</li>
+    <li><code>report/MissionReport.java</code>, <code>report/HtmlReportVisitor.java</code>, <code>report/CsvVisitor.java</code> — report objects and alternate formats.</li>
+  </ul>
+  <p class="small">The companion <code>docs\OOP_CONCEPT_MAP.md</code> and class diagrams in <code>docs\puml\</code> provide more implementation references. OrbitalX uses explicit switches for some finite choices; the design uses polymorphism where interchangeable behavior is useful.</p>
 </section>
 
 <section class="page">
   <h2>OOP example: from subsystem objects to the Systems screen</h2>
-  <p>This screenshot shows an object-oriented idea becoming a feature a user can inspect. The Systems view displays one selected subsystem, its sensor history, active fault state, and relationships to other systems.</p>
+  <p>This is a second concrete example of OOP in the project: the Systems screen is assembled from the live snapshot that the engine publishes. The screen does not reach into or mutate the engine's private model.</p>
   <figure class="figure">
     <img src="screenshots/guide-systems-dark.png" alt="OrbitalX Systems view showing selected subsystem status, telemetry history, faults, and dependencies">
     <figcaption>One view of the same mission data: selecting a subsystem changes its details without exposing or editing the spacecraft's private state.</figcaption>
   </figure>
-  <table>
-    <tr><th>Step</th><th>Objects involved</th><th>What happens</th></tr>
-    <tr><td>1. Store the mission</td><td><code>Spacecraft</code>, <code>Subsystem</code>, <code>Sensor</code></td><td>The spacecraft composes its systems; each subsystem owns sensors and tracks faults/health.</td></tr>
-    <tr><td>2. Publish safe data</td><td><code>SimulationEngine</code>, <code>SimulationSnapshot</code>, <code>SubsystemSnapshot</code></td><td>The controller supplies a snapshot of current telemetry and subsystem status. Snapshot records copy their lists so the view cannot change the model through them.</td></tr>
-    <tr><td>3. Select and render</td><td><code>SystemsView</code>, <code>MissionView</code>, <code>View</code></td><td>The view selects a subsystem by name and draws its status, readings, trend, faults, and dependency links from snapshot data.</td></tr>
-    <tr><td>4. Keep views current</td><td><code>TickListener</code>, <code>SimulationController</code></td><td>When the simulation publishes the next tick, the view receives the new snapshot and repaints.</td></tr>
-  </table>
-  <p>In the source, <code>SystemsView extends MissionView</code>, <code>MissionView extends View</code>, and <code>View implements TickListener</code>. This combines inheritance (shared rendering and update behavior), interfaces (the controller/listener contracts), composition (subsystems own sensors), and encapsulation (the screen reads snapshots instead of reaching into private engine fields).</p>
-  <p class="small">Explore <code>gui/SystemsView.java</code>, <code>gui/MissionView.java</code>, <code>gui/core/View.java</code>, <code>model/Spacecraft.java</code>, <code>model/Subsystem.java</code>, and <code>api/SubsystemSnapshot.java</code> to follow this path in code.</p>
+  <ol>
+    <li><code>Spacecraft</code> constructs and owns its concrete subsystem objects; each <code>Subsystem</code> owns its sensors and fault/health state.</li>
+    <li><code>SimulationEngine.snapshot()</code> creates API snapshot records from model state. <code>SimulationSnapshot</code> and <code>SubsystemSnapshot</code> defensively copy their lists.</li>
+    <li><code>View</code> implements <code>TickListener</code>. Its <code>onTick(...)</code> stores the new snapshot and repaints the view.</li>
+    <li><code>SystemsView</code> chooses the selected subsystem from <code>snapshot.subsystems()</code> and renders health, fault labels, sensor trends, and dependency links.</li>
+  </ol>
+  <p>In code, <code>SystemsView extends MissionView</code>, <code>MissionView extends View</code>, and <code>View implements TickListener</code>. The screenshot therefore demonstrates inheritance and interface-based updates, while the displayed data comes from composed model objects through encapsulated snapshots.</p>
+  <p class="small">Explore <code>gui/SystemsView.java</code>, <code>gui/MissionView.java</code>, <code>gui/core/View.java</code>, <code>simulation/SimulationEngine.java</code>, <code>model/Spacecraft.java</code>, and <code>api/SubsystemSnapshot.java</code> to follow this feature from model to screen.</p>
   <div class="tip"><strong>That is enough to get started.</strong> Begin with Free Flight, learn the Dashboard, then explore one fault at a time. Use Preview when available, and treat recommendations as explanations you can learn from—not as a requirement to automate every decision.</div>
   <p class="small">OrbitalX is a Java educational simulation. It does not connect to, control, or provide advice for any real spacecraft.</p>
 </section>
