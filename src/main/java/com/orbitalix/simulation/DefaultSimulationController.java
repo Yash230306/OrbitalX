@@ -51,6 +51,7 @@ public final class DefaultSimulationController implements SimulationController {
         return engine.previewRecommendation(recommendationId, lookaheadTicks);
     }
     @Override public List<SimulationSnapshot> getHistory() { return engine.getHistory(); }
+    @Override public List<MissionEvent> getEvents() { return engine.events(); }
     @Override public void seekTo(int tick) { engine.seekTo(tick); }
     @Override public void resumeLive() { engine.resumeLive(); }
     @Override public String executeCommand(String line) { return engine.executeCommand(line); }

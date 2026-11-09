@@ -681,7 +681,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
     public synchronized List<SimulationSnapshot> getHistory() { return history.stream().toList(); }
     public synchronized void seekTo(int value) {
         SimulationSnapshot snapshot = replayController.require(history, value);
-        replaying = true; replayTick = snapshot.tick();
+        running = false; replaying = true; replayTick = snapshot.tick();
         tickListeners.forEach(listener -> listener.onTick(replayController.asReplay(snapshot)));
     }
     public synchronized void resumeLive() { replaying = false; publishSnapshot(); }

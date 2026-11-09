@@ -543,7 +543,7 @@ Do in this order. Each task must compile and run before starting the next.
 **Release R3: the suite**
 - [x] A11 (~70 min) `PlannerView` (launch countdown), `ConsoleView`, `SettingsView` (persisted)
 - [x] A12 (~80 min) `SystemsView` (selectable tree, sensor sparklines, dependency graph with cascade pulses), `CrewView` (crew condition and task assignment)
-- [ ] A13 (~70 min) `ReplayView` (scrubber, markers, tally), replay mode across all views, what-if popover polish
+- [x] A13 (~70 min) `ReplayView` (scrubber, markers, tally), replay mode across all views, 30-tick what-if preview details
 - [ ] A14 (~70 min) `ReportsView` (preview, exports, grade stamp, achievements gallery), toasts, vignette, screen shake, tint, particles everywhere, sound wiring. **Tag R3.**
 
 **Release R4: finish**
@@ -594,8 +594,8 @@ GUI screenshots (3 slides); demo scenarios and results; testing; conclusion and 
 - Last updated by: Copilot SDK in VS Code, 2026-11-10
 - Repo: https://github.com/Yash230306/OrbitalX (new private repository); branch `a1-a16-work`.
 - Release reached: R2 (A10)
-- Currently in progress: A1-A12 complete; A13-A17 remain. Dedicated Systems and Crew views are registered and tested.
-- Next step: Implement replay and replay-mode interactions across views (A13), then reports, visual QA, and delivery.
+- Currently in progress: A1-A13 complete; A14-A17 remain. Replay scrubbing/playback, historical event markers, action tallies, and the shell replay indicator are implemented.
+- Next step: Complete Reports and feedback effects (A14), then visual QA and delivery.
 - Compile command: `.\compile.bat`
 - Run commands: GUI: `.\run.bat`   Console: `.\run.bat --cli`   Selftest: `.\run.bat --selftest`   Screenshots: `.\run.bat --screenshots out\screenshots`
 - Decisions made: plain `javac --release 17` because Maven is unavailable; no external libraries.
@@ -616,6 +616,7 @@ GUI screenshots (3 slides); demo scenarios and results; testing; conclusion and 
 - 2026-11-10 A10 done: painter's-order 3D renderer with Lambert shading and picking, eight subsystem meshes, rotatable/zoomable cutaway, pan/zoom orbit map with planned/actual/predicted tracks; interaction tests, `--selftest`, and 80 screenshots pass.
 - 2026-11-10 A11 done: selectable mission configuration with seed/scenario/chaos and launch countdown; terminal command input with history, Tab completion, and styled output; persisted theme/audio/effects/animation/scale settings with live theme application. Planner, Console, Settings, full `--selftest`, and 80 screenshots pass.
 - 2026-11-10 A12 done: selectable subsystem tree with status/fault details, telemetry sparklines, dependency graph and cascade pulses; crew health/stress/radiation/task-progress cards with task assignment controls. Interaction regressions, full `--selftest`, and 80 screenshots pass.
+- 2026-11-10 A13 done: replay timeline scrubbing, event markers, recorded telemetry chart, step/play/resume controls, human/autopilot/self-healing/crew tallies, cross-view replay state and TopBar badge; advisor previews now show 30-tick forecasts with critical timing and side-effect details. Replay and preview regressions, full `--selftest`, and 80 screenshots pass.
 - 2026-11-10 A14 baseline: ten themed Java2D views, control-room shell, CLI controls, settings, exports, and headless screenshot harness are implemented with simplified interactions/rendering.
 - 2026-11-10 A15 done: 108 scenario/difficulty/autonomy runs and API regression checks pass; FULL_AUTO survives NORMAL Cascading Failure while MANUAL loses.
 - 2026-11-10 A16 partial: all 80 view/theme/resolution screenshots render and pass nonblank checks; interactive demo and shortcut verification remain.

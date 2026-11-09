@@ -34,6 +34,7 @@ public final class MainWindow extends JFrame {
     };
     private final ToastLayer toastLayer = new ToastLayer();
     private final JLabel status = new JLabel("SYSTEM NOMINAL");
+    private JLabel replayIndicator;
     private Themes theme;
     private String selectedView = "Dashboard";
     private int speed = 2;
@@ -59,6 +60,7 @@ public final class MainWindow extends JFrame {
             else if (view.equals("Settings")) viewRegistry.register(view, () -> new SettingsView(controller, theme, this::selectTheme));
             else if (view.equals("Systems")) viewRegistry.register(view, () -> new SystemsView(controller, theme));
             else if (view.equals("Crew")) viewRegistry.register(view, () -> new CrewView(controller, theme));
+            else if (view.equals("Replay")) viewRegistry.register(view, () -> new ReplayView(controller, theme));
             else viewRegistry.register(view, () -> new MissionView(view, controller, theme));
         }
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -107,6 +109,7 @@ public final class MainWindow extends JFrame {
             long now = System.nanoTime();
             if (activeView != null) activeView.animateFrame(Math.min(.1, (now - lastAnimationNanos) / 1_000_000_000d));
             lastAnimationNanos = now;
+            if (replayIndicator != null) replayIndicator.setVisible(controller.snapshot().replaying());
             root.repaint();
             if (activeView != null) activeView.repaint();
         });
@@ -256,6 +259,14 @@ public final class MainWindow extends JFrame {
             add(logo, BorderLayout.WEST);
             JPanel controls = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
             controls.setOpaque(false);
+            replayIndicator = new JLabel("REPLAY");
+            replayIndicator.setOpaque(true);
+            replayIndicator.setForeground(theme.background());
+            replayIndicator.setBackground(theme.warning());
+            replayIndicator.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            replayIndicator.setBorder(new EmptyBorder(6, 9, 6, 9));
+            replayIndicator.setVisible(controller.snapshot().replaying());
+            controls.add(replayIndicator);
             addButton(controls, "LAUNCH", MainWindow.this::toggleRun);
             addButton(controls, "AUTONOMY", MainWindow.this::toggleAutonomy);
             addButton(controls, "SELF-HEAL", MainWindow.this::toggleSelfHealing);

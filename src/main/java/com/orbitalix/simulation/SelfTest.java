@@ -17,6 +17,7 @@ import com.orbitalix.gui.ConsoleView;
 import com.orbitalix.gui.CrewView;
 import com.orbitalix.gui.OrbitView;
 import com.orbitalix.gui.PlannerView;
+import com.orbitalix.gui.ReplayView;
 import com.orbitalix.gui.SettingsView;
 import com.orbitalix.gui.SystemsView;
 import com.orbitalix.gui.render3d.Camera;
@@ -94,6 +95,7 @@ public final class SelfTest {
         failures += runCutawayOrbitChecks();
         failures += runPlannerConsoleSettingsChecks();
         failures += runSystemsCrewChecks();
+        failures += runReplayInteractionChecks();
         System.out.println(failures == 0 ? "SELFTEST PASS (determinism and survival checks)" : "SELFTEST FAIL: " + failures + " assertion(s)");
         return failures == 0 ? 0 : 1;
     }
@@ -441,7 +443,7 @@ public final class SelfTest {
             double fuelBeforePreview = engine.fuel();
             view.dispatchEvent(mouse(view, MouseEvent.MOUSE_CLICKED, 806, 195));
             failures += check(engine.tickCount() == tickBeforePreview && engine.fuel() == fuelBeforePreview
-                    && !view.previewMessage().isBlank(), "Dashboard preview remains isolated");
+                    && view.previewMessage().startsWith("30T "), "Dashboard 30-tick preview remains isolated");
             view.dispatchEvent(mouse(view, MouseEvent.MOUSE_CLICKED, 1096, 195));
             failures += check(controller.snapshot().recommendations().stream()
                     .noneMatch(item -> item.id().equals(recommendations.get(0).id())), "Dashboard dismiss action");
@@ -569,6 +571,37 @@ public final class SelfTest {
             failures += check(crew.taskMessage().contains(crewName), "Crew task assignment feedback");
         }
         crew.close();
+        return failures;
+    }
+
+    private static int runReplayInteractionChecks() {
+        int failures = 0;
+        SimulationEngine engine = new SimulationEngine();
+        DefaultSimulationController controller = new DefaultSimulationController(engine);
+        controller.setUplinkDelay(false);
+        controller.injectFault("Propulsion", FaultType.FUEL_LEAK);
+        for (int i = 0; i < 5; i++) controller.tick();
+        ReplayView replay = new ReplayView(controller, Themes.DARK_MISSION);
+        replay.setSize(1280, 720);
+        failures += check(replay.eventMarkerCount() > 0, "Replay event markers");
+
+        replay.dispatchEvent(mouse(replay, MouseEvent.MOUSE_CLICKED, 397, 231));
+        failures += check(controller.snapshot().replaying() && replay.selectedTick() == 4 && !controller.isRunning(),
+                "Replay step backward pauses live simulation");
+        replay.dispatchEvent(mouse(replay, MouseEvent.MOUSE_CLICKED, 721, 231));
+        failures += check(replay.selectedTick() == 5, "Replay step forward");
+
+        replay.dispatchEvent(mouse(replay, MouseEvent.MOUSE_CLICKED, 559, 231));
+        failures += check(replay.isPlaying() && replay.selectedTick() == 0, "Replay playback starts from beginning at live edge");
+        replay.animateFrame(.4);
+        failures += check(replay.selectedTick() == 1, "Replay playback advances recorded snapshots");
+        replay.dispatchEvent(mouse(replay, MouseEvent.MOUSE_CLICKED, 883, 231));
+        failures += check(!controller.snapshot().replaying() && !replay.isPlaying(), "Replay resumes live snapshot");
+
+        replay.dispatchEvent(mouse(replay, MouseEvent.MOUSE_PRESSED, 640, 184));
+        replay.dispatchEvent(mouse(replay, MouseEvent.MOUSE_RELEASED, 640, 184));
+        failures += check(controller.snapshot().replaying() && replay.selectedTick() == 3, "Replay timeline scrubbing");
+        replay.close();
         return failures;
     }
 

@@ -139,7 +139,7 @@ public class MissionView extends View {
         if (!previewMessage.isBlank()) {
             int previewY = plotY + 90;
             card(g, sideX + 10, previewY, sideW - 20, 54);
-            label(g, "WHAT-IF PREVIEW", sideX + 20, previewY + 18, theme.accent());
+            label(g, "WHAT-IF PREVIEW  /  30-TICK FORECAST", sideX + 20, previewY + 18, theme.accent());
             small(g, fitText(g, previewMessage, sideW - 42), sideX + 20, previewY + 37);
         }
         drawLimitControls(g, layout, h);
@@ -289,8 +289,11 @@ public class MissionView extends View {
         int buttonWidth = (layout.sideW() - 42) / 3;
         int relativeX = x - (layout.sideX() + 20);
         if (relativeX < buttonWidth + 4) {
-            PreviewResult result = controller.previewRecommendation(recommendation.id(), Math.max(1, recommendation.ticksLeft()));
-            previewMessage = "PREVIEW: " + result.outcome() + " / fuel " + number(result.fuelAfter());
+            PreviewResult result = controller.previewRecommendation(recommendation.id(), 30);
+            String critical = result.ticksToCritical() < 0 ? "NO CRITICAL" : "CRITICAL IN " + result.ticksToCritical() + "T";
+            String effect = result.sideEffects().isEmpty() ? "NO SIDE EFFECTS" : result.sideEffects().get(0);
+            previewMessage = result.lookaheadTicks() + "T " + result.outcome() + " / FUEL "
+                    + number(result.fuelAfter()) + " / " + critical + " / " + effect;
         } else if (relativeX < buttonWidth * 2 + 8) {
             controller.executeRecommendation(recommendation.id());
             previewMessage = "EXECUTING: " + recommendation.title();

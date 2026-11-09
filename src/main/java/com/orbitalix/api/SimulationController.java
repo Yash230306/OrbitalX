@@ -26,6 +26,7 @@ public interface SimulationController {
     void injectFault(String target, FaultType type);
     PreviewResult previewRecommendation(String recommendationId, int lookaheadTicks);
     List<SimulationSnapshot> getHistory();
+    List<MissionEvent> getEvents();
     void seekTo(int tick);
     void resumeLive();
     String executeCommand(String line);
