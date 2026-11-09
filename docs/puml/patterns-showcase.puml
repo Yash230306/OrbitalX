@@ -1,0 +1,43 @@
+@startuml
+title OrbitalX patterns showcase
+skinparam classAttributeIconSize 0
+
+package "Factory Method" {
+  class FaultFactory
+  abstract class Fault
+  class FuelLeakFault
+  class OverheatFault
+  FaultFactory ..> Fault : create(type)
+  FuelLeakFault --|> Fault
+  OverheatFault --|> Fault
+}
+
+package "Observer / Mediator" {
+  class EventBus
+  class "Topic<T>" as Topic
+  interface MissionEventListener
+  EventBus o-- Topic
+  EventBus --> MissionEventListener : notifies
+}
+
+package "Visitor" {
+  class MissionReport
+  interface "ReportVisitor<T>" as ReportVisitor
+  class HtmlReportVisitor
+  class TextReportVisitor
+  MissionReport --> ReportVisitor : accept
+  HtmlReportVisitor ..|> ReportVisitor
+  TextReportVisitor ..|> ReportVisitor
+}
+
+package "Strategy / Command" {
+  interface AutonomyPolicy
+  class ManualPolicy
+  class TimedAutopilotPolicy
+  class FullAutoPolicy
+  interface CorrectiveAction
+  AutonomyPolicy <|.. ManualPolicy
+  AutonomyPolicy <|.. TimedAutopilotPolicy
+  AutonomyPolicy <|.. FullAutoPolicy
+}
+@enduml

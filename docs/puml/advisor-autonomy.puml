@@ -1,0 +1,52 @@
+@startuml
+title OrbitalX advisor and autonomy response chain
+skinparam classAttributeIconSize 0
+
+package "com.orbitalix.detection" {
+  class DetectionEngine
+  interface AnomalyDetector
+  class ThresholdDetector
+  class RateOfChangeDetector
+  class ZScoreDetector
+  class TrendPredictor
+}
+
+package "com.orbitalix.advisor" {
+  class AdvisorEngine
+  interface RecommendationRule
+  class ConditionRule
+  class Recommendation
+}
+
+package "com.orbitalix.action" {
+  interface CorrectiveAction
+  class ActionResult
+}
+
+package "com.orbitalix.autonomy" {
+  class AutopilotController
+  abstract class ResponseHandler
+  class SelfHealingHandler
+  class AutopilotHandler
+  class CrewHandler
+  class EscalationHandler
+}
+
+DetectionEngine o-- AnomalyDetector
+ThresholdDetector ..|> AnomalyDetector
+RateOfChangeDetector ..|> AnomalyDetector
+ZScoreDetector ..|> AnomalyDetector
+DetectionEngine --> TrendPredictor
+AdvisorEngine o-- RecommendationRule
+ConditionRule ..|> RecommendationRule
+ConditionRule --> CorrectiveAction
+AdvisorEngine --> Recommendation
+Recommendation --> CorrectiveAction
+CorrectiveAction --> ActionResult
+AutopilotController --> ResponseHandler
+SelfHealingHandler --|> ResponseHandler
+AutopilotHandler --|> ResponseHandler
+CrewHandler --|> ResponseHandler
+EscalationHandler --|> ResponseHandler
+ResponseHandler --> ResponseHandler : next
+@enduml

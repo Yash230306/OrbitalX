@@ -1,0 +1,57 @@
+@startuml
+title OrbitalX GUI and API boundary
+skinparam classAttributeIconSize 0
+
+package "com.orbitalix.app" {
+  class Main
+}
+
+package "com.orbitalix.gui" {
+  class MainWindow
+  abstract class View
+  class MissionView
+  class DashboardView
+  class CutawayView
+  class OrbitView
+  class PlannerView
+  class SystemsView
+  class CrewView
+  class ReplayView
+  class ReportsView
+  class ConsoleView
+  class SettingsView
+}
+
+package "com.orbitalix.gui.core" {
+  class ViewRegistry
+}
+
+package "com.orbitalix.api" {
+  interface SimulationController
+  class SimulationSnapshot
+}
+
+package "com.orbitalix.simulation" {
+  class DefaultSimulationController
+  class SimulationEngine
+}
+
+Main --> MainWindow
+MainWindow *-- ViewRegistry
+ViewRegistry o-- "0..*" View
+MissionView --|> View
+DashboardView --|> MissionView
+CutawayView --|> MissionView
+OrbitView --|> MissionView
+PlannerView --|> View
+SystemsView --|> MissionView
+CrewView --|> MissionView
+ReplayView --|> MissionView
+ReportsView --|> MissionView
+ConsoleView --|> View
+SettingsView --|> View
+View --> SimulationController
+View --> SimulationSnapshot
+DefaultSimulationController ..|> SimulationController
+DefaultSimulationController --> SimulationEngine
+@enduml

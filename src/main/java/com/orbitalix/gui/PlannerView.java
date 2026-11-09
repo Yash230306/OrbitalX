@@ -167,6 +167,7 @@ public final class PlannerView extends View {
                 "BRIEF  /  %s  /  %s  /  %s  /  %d CREW  /  %s SCENARIO  /  CHAOS %s",
                 target.name().replace('_', ' '), vehicle.name().replace('_', ' '), level.name(),
                 vehicle.crew(), scenarioName.toUpperCase(java.util.Locale.ROOT), chaos.isSelected() ? "ON" : "OFF"));
+        brief.setToolTipText(target.profile() + " / " + level.guidance());
     }
 
     private void beginLaunch() {

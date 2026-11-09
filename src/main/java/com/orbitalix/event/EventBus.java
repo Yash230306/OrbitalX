@@ -1,13 +1,20 @@
 package com.orbitalix.event;
 
 import com.orbitalix.api.MissionEvent;
+import com.orbitalix.util.Identifiable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 /** Typed mediator and observer hub; subscription handles can detach listeners safely. */
-public final class EventBus {
+public final class EventBus implements Identifiable {
+    private static final AtomicLong NEXT_ID;
+    static { NEXT_ID = new AtomicLong(); }
+    private final long instanceId;
+    { instanceId = NEXT_ID.incrementAndGet(); }
+
     public record Topic<T>(String name, Class<T> payloadType) {
         public Topic {
             if (name == null || name.isBlank()) throw new IllegalArgumentException("Topic name is required");
@@ -17,6 +24,8 @@ public final class EventBus {
     public static final Topic<MissionEvent> MISSION_EVENTS = new Topic<>("mission-events", MissionEvent.class);
     private final Map<Topic<?>, CopyOnWriteArrayList<Consumer<?>>> listeners = new ConcurrentHashMap<>();
     private final Map<com.orbitalix.api.MissionEventListener, AutoCloseable> missionSubscriptions = new ConcurrentHashMap<>();
+
+    @Override public String id() { return "event-bus-" + instanceId; }
 
     public <T> AutoCloseable subscribe(Topic<T> topic, Consumer<? super T> listener) {
         Objects.requireNonNull(topic);

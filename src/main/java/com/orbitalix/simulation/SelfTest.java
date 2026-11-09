@@ -27,6 +27,8 @@ import com.orbitalix.gui.render3d.Camera;
 import com.orbitalix.gui.render3d.Renderer;
 import com.orbitalix.gui.render3d.SpacecraftModel;
 import com.orbitalix.gui.theme.Themes;
+import com.orbitalix.event.EventBus;
+import com.orbitalix.event.MissionRecorder;
 import com.orbitalix.action.*;
 import com.orbitalix.advisor.*;
 import com.orbitalix.autonomy.*;
@@ -60,6 +62,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
@@ -99,6 +103,7 @@ public final class SelfTest {
         failures += runDetectionEventCopyChecks();
         failures += runActionAdvisorAutonomyChecks();
         failures += runReleaseOneIntegrationChecks();
+        failures += runSelfHealingModeChecks();
         failures += runDashboardInteractionChecks();
         failures += runCutawayOrbitChecks();
         failures += runPlannerConsoleSettingsChecks();
@@ -113,6 +118,34 @@ public final class SelfTest {
 
     private static int runApiChecks() {
         int failures = 0;
+        MissionConfig built = MissionConfig.builder().destination(Destination.MOON)
+                .craftType(CraftType.CREW_CAPSULE).difficulty(Difficulty.EASY).seed(17L).build();
+        if (built.destination() != Destination.MOON || built.seed() != 17L) failures++;
+        if (new EventBus().id().equals(new EventBus().id())) failures++;
+        SimulationEngine completed = new SimulationEngine(new MissionConfig(Destination.MOON, CraftType.EXPLORER,
+                Difficulty.EASY, 42L, false, 0));
+        completed.setAutonomyMode(AutonomyMode.FULL_AUTO);
+        completed.start();
+        for (int i = 0; i < 250 && !completed.snapshot().mission().ended(); i++) completed.tick();
+        if (!completed.snapshot().mission().ended()
+                || completed.snapshot().mission().progressPercent() != 100) failures++;
+        Path recording = Path.of("out", "selftest-mission-events.log");
+        try {
+            Files.deleteIfExists(recording);
+            try (MissionRecorder recorder = new MissionRecorder(recording)) {
+                recorder.onEvent(new MissionEvent(3, EventType.PREDICTION, Severity.INFO, "Recorder check"));
+            }
+            if (!Files.readString(recording).contains("T+3 [INFO] Recorder check")) failures++;
+        } catch (Exception ex) {
+            System.err.println("Mission recorder check failed: " + ex.getMessage());
+            failures++;
+        } finally {
+            try { Files.deleteIfExists(recording); }
+            catch (java.io.IOException ex) {
+                System.err.println("Unable to remove self-test recording: " + ex.getMessage());
+                failures++;
+            }
+        }
         SimulationEngine engine = new SimulationEngine();
         engine.tick();
         double fuelBeforePreview = engine.fuel();
@@ -423,6 +456,28 @@ public final class SelfTest {
         failures += check(history.size() == 2 && history.get(0) == 2, "Bounded replay history");
 
         if (failures != 0) System.err.println("Release-one integration checks failed: " + failures);
+        return failures;
+    }
+
+    private static int runSelfHealingModeChecks() {
+        int failures = 0;
+        SimulationEngine enabled = new SimulationEngine();
+        List<MissionEvent> enabledEvents = new ArrayList<>();
+        enabled.addEventListener(enabledEvents::add);
+        enabled.injectFault("Attitude", FaultType.SENSOR_DRIFT);
+        enabled.tick();
+        failures += check(enabledEvents.stream().anyMatch(event -> event.type() == EventType.SELF_HEALING),
+                "Self-healing repairs a safe guidance fault");
+
+        SimulationEngine disabled = new SimulationEngine();
+        List<MissionEvent> disabledEvents = new ArrayList<>();
+        disabled.addEventListener(disabledEvents::add);
+        disabled.setSelfHealing(false);
+        disabled.injectFault("Attitude", FaultType.SENSOR_DRIFT);
+        disabled.tick();
+        failures += check(!disabled.snapshot().selfHealing()
+                && disabledEvents.stream().noneMatch(event -> event.type() == EventType.SELF_HEALING),
+                "Self-healing OFF suppresses automatic repair");
         return failures;
     }
 

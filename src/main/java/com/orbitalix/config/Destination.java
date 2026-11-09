@@ -2,9 +2,15 @@ package com.orbitalix.config;
 
 /** Mission destinations carry distance, communications delay, and environmental pressure. */
 public enum Destination {
-    MOON(80, 1, 0.1, 1),
-    MARS_TRANSFER(120, 3, 0.2, 1),
-    ASTEROID_BELT(160, 5, 0.35, 2);
+    MOON(80, 1, 0.1, 1) {
+        @Override public String profile() { return "Near-Earth transit"; }
+    },
+    MARS_TRANSFER(120, 3, 0.2, 1) {
+        @Override public String profile() { return "Deep-space transfer"; }
+    },
+    ASTEROID_BELT(160, 5, 0.35, 2) {
+        @Override public String profile() { return "High-radiation debris corridor"; }
+    };
 
     private final double distance;
     private final int uplinkDelay;
@@ -22,4 +28,5 @@ public enum Destination {
     public int uplinkDelay() { return uplinkDelay; }
     public double radiationBase() { return radiationBase; }
     public double debrisMultiplier() { return debrisMultiplier; }
+    public abstract String profile();
 }

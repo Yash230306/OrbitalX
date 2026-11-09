@@ -700,7 +700,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
     private SimulationSnapshot liveSnapshot() {
         double distanceLeft = Math.max(0, config.destination().distance() - progress);
         int eta = (int) Math.ceil(distanceLeft / Math.max(0.01, Math.min(throttle, 80) * 0.02));
-        MissionSnapshot mission = new MissionSnapshot(progress / config.destination().distance() * 100,
+        MissionSnapshot mission = new MissionSnapshot(Math.min(100, progress / config.destination().distance() * 100),
                 distanceLeft, eta, ended, outcome);
         List<ResourceSnapshot> resources = List.of(
                 new ResourceSnapshot("Fuel", fuel, config.craftType().fuel(), "%", (int) (fuel / Math.max(0.01, 0.1 + 1.4 * Math.pow(throttle / 100d, 2)))),

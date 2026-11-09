@@ -4,6 +4,7 @@ import com.orbitalix.api.*;
 import com.orbitalix.config.*;
 import com.orbitalix.gui.ScreenshotHarness;
 import com.orbitalix.gui.MainWindow;
+import com.orbitalix.event.MissionRecorder;
 import com.orbitalix.simulation.DefaultSimulationController;
 import com.orbitalix.simulation.SelfTest;
 
@@ -31,19 +32,22 @@ public final class Main {
 
     private static void runConsole() throws Exception {
         DefaultSimulationController controller = new DefaultSimulationController();
-        controller.addEventListener(event -> System.out.printf("[T+%d][%s] %s%n", event.tick(), event.severity(), event.message()));
-        System.out.println("OrbitalIX Mission Control CLI - type help, tick [n], or quit");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        String line;
-        while ((line = reader.readLine()) != null && !line.equalsIgnoreCase("quit")) {
-            if (line.equalsIgnoreCase("tick") || line.startsWith("tick ")) {
-                int count = line.equals("tick") ? 1 : Integer.parseInt(line.substring(5).trim());
-                for (int i = 0; i < count; i++) controller.tick();
-                System.out.println(controller.executeCommand("status"));
-            } else if (line.equalsIgnoreCase("report")) {
-                System.out.println(controller.executeCommand("report"));
-            } else {
-                System.out.println(controller.executeCommand(line));
+        try (MissionRecorder recorder = new MissionRecorder(Path.of("out", "mission-events.log"))) {
+            controller.addEventListener(recorder);
+            controller.addEventListener(event -> System.out.printf("[T+%d][%s] %s%n", event.tick(), event.severity(), event.message()));
+            System.out.println("OrbitalIX Mission Control CLI - type help, tick [n], or quit");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            String line;
+            while ((line = reader.readLine()) != null && !line.equalsIgnoreCase("quit")) {
+                if (line.equalsIgnoreCase("tick") || line.startsWith("tick ")) {
+                    int count = line.equals("tick") ? 1 : Integer.parseInt(line.substring(5).trim());
+                    for (int i = 0; i < count; i++) controller.tick();
+                    System.out.println(controller.executeCommand("status"));
+                } else if (line.equalsIgnoreCase("report")) {
+                    System.out.println(controller.executeCommand("report"));
+                } else {
+                    System.out.println(controller.executeCommand(line));
+                }
             }
         }
     }

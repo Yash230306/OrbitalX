@@ -3,6 +3,7 @@ package com.orbitalix.gui;
 import com.orbitalix.api.ScoreSnapshot;
 import com.orbitalix.api.SimulationSnapshot;
 import com.orbitalix.gui.theme.Theme;
+import com.orbitalix.scoring.Grade;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -82,6 +83,7 @@ public final class ReportsView extends MissionView {
         drawGradeStamp(g, rightX + 52, 184, snapshot.score().grade());
         label(g, snapshot.mission().outcome(), rightX + 104, 170, theme.foreground());
         small(g, "SCORE  /  " + snapshot.score().points() + " POINTS", rightX + 104, 192);
+        small(g, Grade.valueOf(snapshot.score().grade()).description(), rightX + 104, 210);
         small(g, "TICKS  /  " + snapshot.tick() + "    PROGRESS  /  "
                 + String.format(java.util.Locale.ROOT, "%.1f", snapshot.mission().progressPercent()) + "%",
                 rightX, 232);

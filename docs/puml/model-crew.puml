@@ -1,0 +1,57 @@
+@startuml
+title OrbitalX model and crew
+skinparam classAttributeIconSize 0
+
+package "com.orbitalix.model" {
+  class Spacecraft
+  abstract class Subsystem
+  interface SystemComponent
+  class Mission
+}
+
+package "com.orbitalix.sensor" {
+  interface Sensor
+  abstract class BaseSensor
+  class GyroSensor
+  class TemperatureSensor
+  class VoltageSensor
+}
+
+package "com.orbitalix.resource" {
+  abstract class Resource
+  class Battery
+  class FuelTank
+  class OxygenSupply
+  class SealantStock
+}
+
+package "com.orbitalix.crew" {
+  abstract class CrewMember
+  class Commander
+  class Pilot
+  class FlightEngineer
+  class MedicalOfficer
+  class CrewRoster
+  class CrewTask
+}
+
+Spacecraft *-- "1..*" Subsystem
+Spacecraft ..|> SystemComponent
+Mission --> Spacecraft : advances
+Subsystem ..|> SystemComponent
+Subsystem *-- "1..*" Sensor
+Sensor ..|> SystemComponent
+BaseSensor ..|> Sensor
+GyroSensor --|> BaseSensor
+TemperatureSensor --|> BaseSensor
+VoltageSensor --|> BaseSensor
+Spacecraft *-- "1..*" Resource
+Battery --|> Resource
+FuelTank --|> Resource
+OxygenSupply --|> Resource
+SealantStock --|> Resource
+CrewMember ..|> SystemComponent
+Spacecraft *-- CrewRoster
+CrewRoster *-- "1..*" CrewMember
+CrewMember o-- CrewTask
+@enduml
