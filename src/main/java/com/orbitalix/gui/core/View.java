@@ -34,6 +34,7 @@ public abstract class View extends JPanel implements TickListener {
     public final void close() { controller.removeTickListener(this); }
     protected void onSnapshot(SimulationSnapshot value) {}
     protected void animate(double elapsedSeconds) {}
+    public final void animateFrame(double elapsedSeconds) { animate(elapsedSeconds); }
     protected abstract void paintView(Graphics2D graphics);
 
     @Override protected final void paintComponent(Graphics graphics) {

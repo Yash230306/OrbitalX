@@ -30,6 +30,8 @@ public final class ScreenshotHarness {
                 for (int[] size : new int[][]{{1280, 720}, {1920, 1080}}) {
                     MissionView panel = view.equals("Dashboard")
                             ? new DashboardView(renderController, theme)
+                            : view.equals("Cutaway") ? new CutawayView(renderController, theme)
+                            : view.equals("Orbit") ? new OrbitView(renderController, theme)
                             : new MissionView(view, renderController, theme);
                     panel.setSize(size[0], size[1]);
                     BufferedImage image = new BufferedImage(size[0], size[1], BufferedImage.TYPE_INT_ARGB);

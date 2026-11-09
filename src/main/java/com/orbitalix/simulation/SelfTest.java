@@ -11,6 +11,11 @@ import com.orbitalix.api.EventType;
 import com.orbitalix.api.MissionEvent;
 import com.orbitalix.api.Severity;
 import com.orbitalix.gui.DashboardView;
+import com.orbitalix.gui.CutawayView;
+import com.orbitalix.gui.OrbitView;
+import com.orbitalix.gui.render3d.Camera;
+import com.orbitalix.gui.render3d.Renderer;
+import com.orbitalix.gui.render3d.SpacecraftModel;
 import com.orbitalix.gui.theme.Themes;
 import com.orbitalix.action.*;
 import com.orbitalix.advisor.*;
@@ -42,6 +47,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 
 /** Headless regression matrix verifies seeded determinism and representative autonomy survival. */
 public final class SelfTest {
@@ -79,6 +85,7 @@ public final class SelfTest {
         failures += runActionAdvisorAutonomyChecks();
         failures += runReleaseOneIntegrationChecks();
         failures += runDashboardInteractionChecks();
+        failures += runCutawayOrbitChecks();
         System.out.println(failures == 0 ? "SELFTEST PASS (determinism and survival checks)" : "SELFTEST FAIL: " + failures + " assertion(s)");
         return failures == 0 ? 0 : 1;
     }
@@ -436,8 +443,55 @@ public final class SelfTest {
         return failures;
     }
 
-    private static MouseEvent mouse(DashboardView view, int id, int x, int y) {
+    private static MouseEvent mouse(java.awt.Component view, int id, int x, int y) {
         return new MouseEvent(view, id, System.currentTimeMillis(), 0, x, y, 1, false, MouseEvent.BUTTON1);
+    }
+
+    private static int runCutawayOrbitChecks() {
+        int failures = 0;
+        SimulationEngine engine = new SimulationEngine();
+        DefaultSimulationController controller = new DefaultSimulationController(engine);
+        failures += check(new SpacecraftModel().build(controller.snapshot()).size() == 8,
+                "Eight-part 3D spacecraft model");
+        Camera camera = new Camera();
+        failures += check(camera.project(new com.orbitalix.gui.render3d.Vec3(0, 0, 0), 0, 0, 400, 300).visible(),
+                "Perspective camera projection");
+        java.awt.image.BufferedImage rendered = new java.awt.image.BufferedImage(600, 400,
+                java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        java.awt.Graphics2D graphics = rendered.createGraphics();
+        Renderer renderer = new Renderer();
+        renderer.render(graphics, new SpacecraftModel().build(controller.snapshot()), camera, 0, 0, 600, 400);
+        graphics.dispose();
+        failures += check(renderer.pick(300, 200) != null, "3D face rendering and subsystem picking");
+
+        CutawayView cutaway = new CutawayView(controller, Themes.DARK_MISSION);
+        cutaway.setSize(1280, 720);
+        double initialDistance = cutaway.cameraDistance();
+        cutaway.dispatchEvent(wheel(cutaway, 640, 360));
+        failures += check(cutaway.cameraDistance() != initialDistance, "Cutaway wheel zoom");
+        cutaway.dispatchEvent(mouse(cutaway, MouseEvent.MOUSE_CLICKED, 1180, 680));
+        failures += check(!cutaway.autoRotateEnabled(), "Cutaway auto-rotate toggle");
+        cutaway.close();
+
+        OrbitView orbit = new OrbitView(controller, Themes.DARK_MISSION);
+        orbit.setSize(1280, 720);
+        double initialZoom = orbit.zoomLevel();
+        orbit.dispatchEvent(wheel(orbit, 640, 360));
+        failures += check(orbit.zoomLevel() != initialZoom, "Orbit wheel zoom");
+        orbit.dispatchEvent(new MouseEvent(orbit, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(),
+                MouseEvent.BUTTON1_DOWN_MASK, 300, 300, 1, false, MouseEvent.BUTTON1));
+        orbit.dispatchEvent(new MouseEvent(orbit, MouseEvent.MOUSE_DRAGGED, System.currentTimeMillis(),
+                MouseEvent.BUTTON1_DOWN_MASK, 340, 325, 1, false, MouseEvent.BUTTON1));
+        orbit.dispatchEvent(new MouseEvent(orbit, MouseEvent.MOUSE_RELEASED, System.currentTimeMillis(), 0,
+                340, 325, 1, false, MouseEvent.BUTTON1));
+        failures += check(orbit.panX() == 40 && orbit.panY() == 25, "Orbit drag-to-pan");
+        orbit.close();
+        return failures;
+    }
+
+    private static MouseWheelEvent wheel(java.awt.Component component, int x, int y) {
+        return new MouseWheelEvent(component, MouseEvent.MOUSE_WHEEL, System.currentTimeMillis(), 0,
+                x, y, 0, false, MouseWheelEvent.WHEEL_UNIT_SCROLL, 1, 1);
     }
 
     private static int check(boolean passed, String label) {

@@ -84,22 +84,22 @@ public class MissionView extends View {
         DashboardLayout layout = dashboardLayout(w, h);
         int pad = layout.pad(), gap = layout.gap(), top = layout.top();
         int cardsX = layout.cardsX(), cardsW = layout.cardsW(), sideW = layout.sideW(), sideX = layout.sideX();
-        List<ResourceSnapshot> resources = snapshot.resources();
+        List<DashboardGauge> gauges = dashboardGauges();
         int gaugeW = (cardsW - gap) / 2;
         int gaugeH = layout.gaugeH();
-        for (int i = 0; i < Math.min(resources.size(), 6); i++) {
+        for (int i = 0; i < Math.min(gauges.size(), 6); i++) {
             int col = i % 2, row = i / 2;
             int x = cardsX + col * (gaugeW + gap), y = top + row * (gaugeH + gap);
             card(g, x, y, gaugeW, gaugeH);
-            ResourceSnapshot resource = resources.get(i);
+            DashboardGauge resource = gauges.get(i);
             int gaugeRadius = Math.min(62, Math.max(34, (gaugeW - 150) / 2));
             int gaugeCenterX = x + gaugeRadius + 16;
             drawGauge(g, gaugeCenterX, y + gaugeH / 2 + 5, gaugeRadius,
-                    resource.name(), resource.level(), resource.capacity(),
-                    resource.level() < resource.capacity() * .25 ? theme.warning() : theme.accent());
+                    resource.name(), resource.value(), resource.maximum(),
+                    resource.value() < resource.maximum() * .25 ? theme.warning() : theme.accent());
             g.setFont(new Font("Segoe UI", Font.BOLD, 20));
             g.setColor(theme.foreground());
-            g.drawString(number(resource.level()) + " " + resource.unit(), x + gaugeRadius * 2 + 36, y + gaugeH / 2);
+            g.drawString(number(resource.value()) + " " + resource.unit(), x + gaugeRadius * 2 + 36, y + gaugeH / 2);
             g.setFont(new Font("Segoe UI", Font.PLAIN, 11));
             g.setColor(theme.muted());
             g.drawString(resource.ticksToEmpty() >= 0 ? "EST. " + resource.ticksToEmpty() + " TICKS" : "NOMINAL",
@@ -161,6 +161,25 @@ public class MissionView extends View {
         return new DashboardLayout(pad, gap, top, pad + controlWidth, cardsWidth, sideWidth,
                 pad + controlWidth + cardsWidth + gap, top + 52, advisorHeight, rowHeight, visible, gaugeHeight,
                 top + advisorHeight + gap, controlWidth);
+    }
+
+    private List<DashboardGauge> dashboardGauges() {
+        List<DashboardGauge> gauges = new java.util.ArrayList<>();
+        snapshot.resources().stream().filter(resource -> !resource.name().equalsIgnoreCase("reserve fuel"))
+                .forEach(resource -> gauges.add(new DashboardGauge(resource.name(), resource.level(),
+                        resource.capacity(), resource.unit(), resource.ticksToEmpty())));
+        double temperature = sensorValue("Thermal", 24);
+        double pressure = sensorValue("Life Support", 101);
+        double radiationDose = snapshot.crew().stream().mapToDouble(CrewSnapshot::radiationDose).average().orElse(0);
+        gauges.add(new DashboardGauge("Temperature", temperature, 100, "C", -1));
+        gauges.add(new DashboardGauge("Cabin Pressure", pressure, 110, "kPa", -1));
+        gauges.add(new DashboardGauge("Radiation", radiationDose, 100, "% dose", -1));
+        return List.copyOf(gauges);
+    }
+
+    private double sensorValue(String subsystem, double fallback) {
+        return snapshot.subsystems().stream().filter(item -> item.name().equalsIgnoreCase(subsystem))
+                .flatMap(item -> item.sensors().stream()).mapToDouble(SensorSnapshot::value).findFirst().orElse(fallback);
     }
 
     private void drawThrottle(Graphics2D g, DashboardLayout layout) {
@@ -307,6 +326,7 @@ public class MissionView extends View {
     private record DashboardLayout(int pad, int gap, int top, int cardsX, int cardsW, int sideW, int sideX, int rowsY,
                                    int advisorHeight, int rowHeight, int visibleRecommendations, int gaugeH,
                                    int plotY, int controlWidth) {}
+    private record DashboardGauge(String name, double value, double maximum, String unit, int ticksToEmpty) {}
 
     private void drawPlanner(Graphics2D g, int w, int h) {
         int x = 28, y = 90, cardW = (w - 80) / 3;
@@ -330,7 +350,7 @@ public class MissionView extends View {
         drawButton(g, w / 2 - 110, h - 84, 220, 48, snapshot.mission().ended() ? "MISSION COMPLETE" : "LAUNCH / RESUME", true);
     }
 
-    private void drawOrbit(Graphics2D g, int w, int h) {
+    protected void drawOrbit(Graphics2D g, int w, int h) {
         int x = 28, y = 86, width = w - 56, height = h - 120;
         card(g, x, y, width, height);
         int left = x + 42, right = x + width - 42, mid = y + height / 2;
@@ -358,7 +378,7 @@ public class MissionView extends View {
         small(g, "UPLINK " + snapshot.comms().delayTicks() + " TICKS  /  SIGNAL " + Math.round(snapshot.comms().signalStrength() * 100) + "%", x + 22, y + 30);
     }
 
-    private void drawCutaway(Graphics2D g, int w, int h) {
+    protected void drawCutaway(Graphics2D g, int w, int h) {
         int cx = w / 2, cy = h / 2 + 15;
         card(g, 28, 82, w - 56, h - 112);
         g.setColor(new Color(theme.accent().getRed(), theme.accent().getGreen(), theme.accent().getBlue(), 35));

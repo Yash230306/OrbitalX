@@ -538,7 +538,7 @@ Do in this order. Each task must compile and run before starting the next.
 **Release R2: the GUI core**
 - [x] A8 (~90 min) GUI foundation: 4 themes, `gui.kit` widgets, `gui.anim`, `gui.audio` (synth + silent), `View` base class, `MainWindow` shell (NavRail, TopBar, BottomTicker, ToastLayer, SplashScreen), view registry, **`--screenshots` harness**
 - [x] A9 (~90 min) `DashboardView`: gauges, chart, advisor cards (with Preview popover), limits, throttle, annunciator panel, master caution
-- [ ] A10 (~120 min) `gui.render3d` + `CutawayView` (3D spacecraft with effects) and `OrbitView`. **Tag R2.**
+- [x] A10 (~120 min) `gui.render3d` + `CutawayView` (3D spacecraft with effects) and `OrbitView`. **Tag R2.**
 
 **Release R3: the suite**
 - [ ] A11 (~70 min) `PlannerView` (launch countdown), `ConsoleView`, `SettingsView` (persisted)
@@ -593,9 +593,9 @@ GUI screenshots (3 slides); demo scenarios and results; testing; conclusion and 
 ## HANDOFF STATE (AI: keep this updated. The next AI reads it first.)
 - Last updated by: Copilot SDK in VS Code, 2026-11-10
 - Repo: https://github.com/Yash230306/OrbitalX (new private repository); branch `a1-a16-work`.
-- Release reached: R1 (A7)
-- Currently in progress: A1-A9 complete; A10-A17 remain. Dashboard controls now execute through the controller API and have headless interaction regressions.
-- Next step: Implement the 3D cutaway renderer and interactive orbit view (A10), then complete the remaining release tasks in order.
+- Release reached: R2 (A10)
+- Currently in progress: A1-A10 complete; A11-A17 remain. R2's 3D spacecraft renderer and interactive orbit view are in place and pass the screenshot matrix.
+- Next step: Build the Planner, Console, and persisted Settings interactions (A11), then continue through A17.
 - Compile command: `.\compile.bat`
 - Run commands: GUI: `.\run.bat`   Console: `.\run.bat --cli`   Selftest: `.\run.bat --selftest`   Screenshots: `.\run.bat --screenshots out\screenshots`
 - Decisions made: plain `javac --release 17` because Maven is unavailable; no external libraries.
@@ -613,6 +613,7 @@ GUI screenshots (3 slides); demo scenarios and results; testing; conclusion and 
 - 2026-11-10 A7 done: integrated scenario/chaos, uplink channels, replay/preview, scoring, reports, console, telemetry detection/advice, and autonomy response chain; compile and full `--selftest` pass.
 - 2026-11-10 A8 done: four themes, shared View lifecycle and registry, reusable widgets, animation/particle and synth/silent audio foundations, splash/ticker/toast shell, listener cleanup, and 80 headless screenshots across all views/themes/resolutions.
 - 2026-11-10 A9 done: dashboard throttle drag, operating-limit controls, clickable recommendation preview/execute/dismiss, preview popover, and 20-tile master-caution annunciator; headless interaction tests and 80 screenshots pass.
+- 2026-11-10 A10 done: painter's-order 3D renderer with Lambert shading and picking, eight subsystem meshes, rotatable/zoomable cutaway, pan/zoom orbit map with planned/actual/predicted tracks; interaction tests, `--selftest`, and 80 screenshots pass.
 - 2026-11-10 A14 baseline: ten themed Java2D views, control-room shell, CLI controls, settings, exports, and headless screenshot harness are implemented with simplified interactions/rendering.
 - 2026-11-10 A15 done: 108 scenario/difficulty/autonomy runs and API regression checks pass; FULL_AUTO survives NORMAL Cascading Failure while MANUAL loses.
 - 2026-11-10 A16 partial: all 80 view/theme/resolution screenshots render and pass nonblank checks; interactive demo and shortcut verification remain.

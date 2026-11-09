@@ -38,6 +38,7 @@ public final class MainWindow extends JFrame {
     private String selectedView = "Dashboard";
     private int speed = 2;
     private boolean fullScreen;
+    private long lastAnimationNanos = System.nanoTime();
     private final JTextField commandField = new JTextField();
     private View activeView;
     private SplashScreen splashScreen;
@@ -51,6 +52,8 @@ public final class MainWindow extends JFrame {
         this.theme = readTheme();
         for (String view : VIEWS) {
             if (view.equals("Dashboard")) viewRegistry.register(view, () -> new DashboardView(controller, theme));
+            else if (view.equals("Cutaway")) viewRegistry.register(view, () -> new CutawayView(controller, theme));
+            else if (view.equals("Orbit")) viewRegistry.register(view, () -> new OrbitView(controller, theme));
             else viewRegistry.register(view, () -> new MissionView(view, controller, theme));
         }
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -96,6 +99,9 @@ public final class MainWindow extends JFrame {
         });
         simulationTimer.start();
         animationTimer = new Timer(16, event -> {
+            long now = System.nanoTime();
+            if (activeView != null) activeView.animateFrame(Math.min(.1, (now - lastAnimationNanos) / 1_000_000_000d));
+            lastAnimationNanos = now;
             root.repaint();
             if (activeView != null) activeView.repaint();
         });
