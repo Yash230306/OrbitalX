@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OrbitalX — Beginner's Guide</title>
+<style>
+@page { size: Letter; margin: 0.68in 0.72in 0.7in; }
+* { box-sizing: border-box; }
+body { margin: 0; color: #17243a; font: 10pt/1.48 "Aptos", "Calibri", sans-serif; }
+h1, h2, h3 { color: #103456; page-break-after: avoid; }
+h1 { font-size: 30pt; line-height: 1.08; margin: 0 0 14pt; }
+h2 { font-size: 19pt; margin: 0 0 11pt; padding-bottom: 5pt; border-bottom: 2px solid #21b9ca; }
+h3 { font-size: 12pt; margin: 13pt 0 5pt; }
+p { margin: 5pt 0 8pt; }
+ul, ol { margin: 4pt 0 9pt; padding-left: 20pt; }
+li { margin: 2pt 0; }
+table { width: 100%; border-collapse: collapse; margin: 8pt 0 12pt; font-size: 9pt; page-break-inside: avoid; }
+th { background: #103456; color: white; text-align: left; }
+th, td { padding: 5pt 7pt; border: 1px solid #c9d5e0; vertical-align: top; }
+tr:nth-child(even) td { background: #f1f6fa; }
+code, pre { font-family: Consolas, "Courier New", monospace; }
+code { color: #075e70; font-size: 9pt; }
+pre { background: #101b2c; color: #e8f1ff; padding: 10pt 12pt; border-radius: 5pt; white-space: pre-wrap; font-size: 8.5pt; line-height: 1.35; page-break-inside: avoid; }
+.cover { height: 9.1in; display: flex; flex-direction: column; justify-content: center; page-break-after: always; }
+.eyebrow { color: #1199a9; font-size: 10pt; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14pt; }
+.subtitle { font-size: 15pt; line-height: 1.4; color: #53647a; max-width: 470pt; }
+.coverbox, .note, .tip, .warning { padding: 10pt 12pt; margin: 10pt 0; border-left: 4px solid #20b6c6; background: #edf8fa; page-break-inside: avoid; }
+.tip { border-color: #31a77d; background: #eef8f3; }
+.warning { border-color: #e3a534; background: #fff7e7; }
+.small { font-size: 8.5pt; color: #506078; }
+.toc li { margin: 6pt 0; }
+.page { page-break-before: always; }
+.keep { page-break-inside: avoid; }
+.pill { display: inline-block; padding: 2pt 6pt; border-radius: 4pt; background: #e7f2f7; color: #103456; font-weight: bold; }
+.figure { margin: 10pt 0 14pt; padding: 6pt; border: 1px solid #c9d5e0; page-break-inside: avoid; }
+.figure img { display: block; width: 100%; max-height: 5.6in; object-fit: contain; }
+.figure figcaption { margin-top: 5pt; color: #506078; font-size: 8.5pt; }
+a { color: #087c91; text-decoration: none; }
+hr { border: 0; border-top: 1px solid #ccd7e0; margin: 18pt 0; }
+</style>
+</head>
+<body>
+<section class="cover">
+  <div class="eyebrow">A from-scratch guide</div>
+  <h1>OrbitalX<br>Spacecraft Mission Control</h1>
+  <p class="subtitle">A plain-language guide to what the project does, how to start it, how to fly a mission, and what every screen and command is for.</p>
+  <div class="coverbox">
+    <strong>You do not need to know Java or spacecraft engineering to use this guide.</strong>
+    OrbitalX is a learning simulator: it creates a pretend spacecraft mission, shows changing instrument readings, introduces equipment problems, and lets you choose how those problems are handled.
+  </div>
+  <p><strong>Project:</strong> OrbitalX — a Java desktop and command-line simulator</p>
+  <p><strong>Repository:</strong> https://github.com/Yash230306/OrbitalX</p>
+  <p><strong>Current branch:</strong> a1-a16-work &nbsp; | &nbsp; <strong>Java:</strong> 17 or newer</p>
+  <p class="small">Prepared for a first-time user. Instructions below are for Windows PowerShell unless noted.</p>
+</section>
+
+<section>
+  <h2>Start here</h2>
+  <p>OrbitalX is a simulation, not a real spacecraft connection. Everything it changes—fuel, oxygen, faults, crew condition, and mission progress—is inside the program. It is safe to experiment with.</p>
+  <h3>What is a mission-control simulator?</h3>
+  <p>Imagine a vehicle travelling toward a destination. It has engines, power, temperature control, communications, navigation, life support, a computer, supplies, and crew. The program advances the mission in small steps called <em>ticks</em>. On each tick, the simulated spacecraft consumes resources, instruments report values, the software looks for trouble, and recommendations may appear.</p>
+  <p>A tick is a simulation step—not necessarily one real second. The GUI controls how quickly those steps run on your computer.</p>
+  <h3>Words you will see</h3>
+  <table>
+    <tr><th>Word</th><th>Simple meaning</th></tr>
+    <tr><td>Telemetry</td><td>Measurements sent by the spacecraft: fuel, temperature, pressure, battery, signal, and more.</td></tr>
+    <tr><td>Subsystem</td><td>One part of the craft, such as Propulsion, Power, Thermal, or Life Support.</td></tr>
+    <tr><td>Fault</td><td>A simulated problem, such as a fuel leak or broken antenna.</td></tr>
+    <tr><td>Recommendation</td><td>A suggested response, which you can preview, execute, or dismiss.</td></tr>
+    <tr><td>Autonomy</td><td>How much authority the onboard autopilot has to take action.</td></tr>
+    <tr><td>Uplink delay</td><td>A simulated wait before a command from mission control reaches the craft.</td></tr>
+    <tr><td>Replay</td><td>A view of recorded earlier mission states; it does not rewind the live craft.</td></tr>
+  </table>
+  <div class="tip"><strong>First-time recommendation:</strong> run the GUI, open Planner, select Free Flight and EASY, leave the seed at 42, then launch. Watch the Dashboard before trying a fault scenario.</div>
+</section>
+
+<section class="page">
+  <h2>1. Install, build, and start</h2>
+  <h3>What you need</h3>
+  <ul>
+    <li>A Windows computer (this guide's commands use Windows).</li>
+    <li>Java Development Kit (JDK) version 17 or newer. The JDK includes both <code>java</code> and <code>javac</code>.</li>
+    <li>The OrbitalX project folder. If you cloned it, open PowerShell in that folder.</li>
+  </ul>
+  <h3>Start the graphical app</h3>
+  <ol>
+    <li>Open the OrbitalX folder in File Explorer.</li>
+    <li>Click the folder address bar, type <code>powershell</code>, and press Enter. PowerShell opens in the project folder.</li>
+    <li>Run the command below. The script compiles the Java source and then opens the desktop app.</li>
+  </ol>
+  <pre>.\run.bat</pre>
+  <p>The first successful build prints <code>Compiled OK</code>. The desktop window should then appear. Keep the project files together; the scripts rely on the project folder structure.</p>
+  <h3>Other useful launch commands</h3>
+  <table>
+    <tr><th>Command</th><th>What it does</th></tr>
+    <tr><td><code>.\compile.bat</code></td><td>Compile the program only; useful when checking whether Java/build setup works.</td></tr>
+    <tr><td><code>.\run.bat --cli</code></td><td>Start the text-based mission console in the same PowerShell window.</td></tr>
+    <tr><td><code>.\run.bat --selftest</code></td><td>Run the built-in regression checks. This is a test mode, not the normal app.</td></tr>
+    <tr><td><code>.\run.bat --screenshots out\screenshots</code></td><td>Render all ten views in four themes at two sizes (80 images) without opening the GUI window.</td></tr>
+  </table>
+  <div class="warning"><strong>Important:</strong> run these commands from the OrbitalX folder. If PowerShell says the script is not found, you are probably in the wrong directory. If <code>javac</code> is not recognized, install a JDK (not only a Java runtime) and reopen PowerShell.</div>
+  <p>On Linux/macOS, use <code>./run.sh</code>, <code>./run.sh --cli</code>, and <code>./compile.sh</code>.</p>
+</section>
+
+<section class="page">
+  <h2>2. Your first mission, step by step</h2>
+  <ol>
+    <li><strong>Open Planner.</strong> It is also the first navigation item. Choose a destination, spacecraft, difficulty, and scenario.</li>
+    <li><strong>Keep the seed.</strong> The seed is a number that makes random events repeatable. The same setup and seed are useful when comparing runs.</li>
+    <li><strong>Choose a scenario.</strong> Free Flight is the calm introduction. Other scenarios schedule equipment problems at later ticks.</li>
+    <li><strong>Launch.</strong> The launch button begins a short countdown. At the end, the selected settings configure and start the mission.</li>
+    <li><strong>Watch the Dashboard.</strong> Read resource gauges, the mission progress line, and any advisor cards. Use the other views to inspect details.</li>
+    <li><strong>Respond to recommendations.</strong> Select Preview to estimate a possible action, Execute to send it, or Dismiss if you do not want that recommendation.</li>
+    <li><strong>Pause or continue.</strong> Use the top LAUNCH control or Space to start/pause. The exact button label changes with mission state.</li>
+    <li><strong>Review the outcome.</strong> Reports shows a score/grade, achievements, a report preview, and HTML/CSV export buttons.</li>
+  </ol>
+  <h3>Destinations</h3>
+  <table>
+    <tr><th>Destination</th><th>What changes</th><th>Good for</th></tr>
+    <tr><td>Moon</td><td>Shortest modeled trip (80 distance units), 1-tick uplink delay when enabled.</td><td>First mission and quick experiments.</td></tr>
+    <tr><td>Mars Transfer</td><td>Medium trip (120 units), 3-tick uplink delay.</td><td>Default, balanced demonstration.</td></tr>
+    <tr><td>Asteroid Belt</td><td>Longest trip (160 units), 5-tick uplink delay and a harsher environment.</td><td>More demanding play.</td></tr>
+  </table>
+  <h3>Spacecraft choices</h3>
+  <table>
+    <tr><th>Craft</th><th>Trade-off</th></tr>
+    <tr><td>Explorer</td><td>Balanced supplies and three crew.</td></tr>
+    <tr><td>Freighter</td><td>More fuel, less oxygen, two crew, and slower progress.</td></tr>
+    <tr><td>Crew Capsule</td><td>Four crew, larger oxygen supply, and stronger life support, but less fuel.</td></tr>
+  </table>
+  <h3>Difficulty</h3>
+  <p>EASY reduces fault pressure and allows a larger response window. NORMAL is the standard setting. HARD raises pressure and shortens the time available for a response. These affect the simulation, not your computer's performance.</p>
+</section>
+
+<section class="page">
+  <h2>3. Every screen</h2>
+  <p>The navigation rail contains ten views. All display the same live mission unless the Replay view has moved to an earlier recorded tick.</p>
+  <table>
+    <tr><th>View</th><th>What it is for</th><th>What you can do or learn</th></tr>
+    <tr><td><strong>Planner</strong></td><td>Set up a new mission.</td><td>Choose destination, craft, difficulty, scenario, deterministic seed, and chaos setting; launch after the countdown.</td></tr>
+    <tr><td><strong>Dashboard</strong></td><td>At-a-glance flight status.</td><td>Inspect fuel, battery, oxygen, temperature, pressure, radiation, throttle, limits, advice, mission progress, and caution status. Drag the throttle control; preview/execute/dismiss recommendations.</td></tr>
+    <tr><td><strong>Cutaway</strong></td><td>See a simplified 3D spacecraft.</td><td>Inspect the eight subsystem health indicators; drag to rotate, scroll to zoom, and toggle auto-rotation.</td></tr>
+    <tr><td><strong>Orbit</strong></td><td>See the journey.</td><td>Compare planned, actual, and predicted tracks; inspect distance/ETA and communications status; drag to pan and scroll to zoom.</td></tr>
+    <tr><td><strong>Systems</strong></td><td>Investigate an equipment subsystem.</td><td>Select an item in the subsystem list to view its health, faults, sensor readings/history, and dependency relationships.</td></tr>
+    <tr><td><strong>Crew</strong></td><td>Check crew condition and assign work.</td><td>Review health, stress, radiation dose, and task status. Assign EVA Repair, Medical Care, Manual Reboot, or Rest where available.</td></tr>
+    <tr><td><strong>Replay</strong></td><td>Study earlier snapshots.</td><td>Scrub the timeline, use Step Back/Forward or Play, and choose Resume Live when finished. Replay pauses live ticking while reviewing history.</td></tr>
+    <tr><td><strong>Console</strong></td><td>Type mission commands inside the GUI.</td><td>Run commands, see their output, use Up/Down for command history and Tab for completion.</td></tr>
+    <tr><td><strong>Reports</strong></td><td>Summarize mission performance.</td><td>Read the HTML preview, grade, score, action counts, achievement gallery; export HTML or CSV.</td></tr>
+    <tr><td><strong>Settings</strong></td><td>Personalize presentation.</td><td>Choose a theme, sound alerts, animation quality, screen effects, FPS display, UI scale, and sound volume. Preferences persist.</td></tr>
+  </table>
+  <p class="small"><strong>Settings note:</strong> this build applies the theme, sound on/off, screen effects on/off, and FPS display. Animation quality, UI scale, and the sound-volume choice are saved as preferences but do not currently alter rendering or sound level.</p>
+  <figure class="figure">
+    <img src="screenshots/11_dashboard.png" alt="OrbitalX Dashboard showing resource gauges, advisor recommendation, throttle control, mission progress, and caution status">
+    <figcaption>Dashboard example: gauges summarize resources, the advisor card offers a response, and the progress panel shows mission status.</figcaption>
+  </figure>
+  <figure class="figure">
+    <img src="screenshots/10_planner.png" alt="OrbitalX Planner showing destination, spacecraft, difficulty, scenario, seed, chaos, and launch controls">
+    <figcaption>Planner example: choose a setup, then launch the simulation.</figcaption>
+  </figure>
+  <h3>Top bar and footer</h3>
+  <ul>
+    <li><strong>LAUNCH:</strong> start or pause mission ticking.</li>
+    <li><strong>AUTONOMY:</strong> cycle through Manual, Timed Autopilot, and Full Auto.</li>
+    <li><strong>SELF-HEAL:</strong> turn automatic safe repairs on or off.</li>
+    <li><strong>THEME:</strong> cycle the color theme.</li>
+    <li><strong>HTML / CSV:</strong> export reports to the <code>out</code> folder.</li>
+    <li><strong>Speed:</strong> cycle the simulation tick rate.</li>
+    <li><strong>Footer command box:</strong> send a command without leaving the current view.</li>
+  </ul>
+  <div class="note"><strong>Color hints:</strong> green usually means nominal, amber indicates warning, red indicates critical, blue can indicate safe mode, and gray can indicate a failed item. Read the text labels as well as color.</div>
+</section>
+
+<section class="page">
+  <h2>4. Faults, advice, and autonomy</h2>
+  <p>The simulator demonstrates 15 kinds of equipment or sensor problem. A problem can change readings, reduce mission performance, and create one or more recommendations. Some problems are introduced by a scenario; you can also inject faults from the command line.</p>
+  <table>
+    <tr><th>Problem</th><th>What you may notice</th><th>Typical response</th></tr>
+    <tr><td>Fuel leak / low fuel</td><td>Fuel falls faster; arrival may be at risk.</td><td>Reduce throttle, cross-feed reserve fuel, or abort a burn.</td></tr>
+    <tr><td>Overheating / coolant failure</td><td>Temperature rises.</td><td>Activate radiators, restart the coolant pump, or reduce throttle.</td></tr>
+    <tr><td>Power / solar failure</td><td>Battery trends down or solar generation drops.</td><td>Shed nonessential load or reorient the panels; crew EVA repair can help.</td></tr>
+    <tr><td>Communication dropout</td><td>Signal disappears; commands may be delayed or unavailable.</td><td>Switch to backup antenna.</td></tr>
+    <tr><td>Gyro / navigation drift</td><td>Pointing or course error grows and progress may slow.</td><td>Recalibrate gyro or make a course correction.</td></tr>
+    <tr><td>Scrubber failure / low oxygen</td><td>Atmosphere readings worsen.</td><td>Switch to backup scrubber or enter safe mode.</td></tr>
+    <tr><td>Hull breach</td><td>Cabin pressure and oxygen fall.</td><td>Seal the breach (uses sealant); onboard crew repair may be assigned.</td></tr>
+    <tr><td>Radiation storm</td><td>Radiation rises; crew and electronics can be affected.</td><td>Enter radiation shelter and reduce exposure.</td></tr>
+    <tr><td>Debris threat</td><td>A collision threat appears on the Orbit view.</td><td>Evasive maneuver; it costs fuel.</td></tr>
+    <tr><td>Computer fault</td><td>Computer error or frozen telemetry.</td><td>Reboot or switch to backup computer. Autopilot/self-healing may temporarily be unavailable.</td></tr>
+    <tr><td>Engine misfire</td><td>Thrust efficiency drops.</td><td>Switch to backup engine or reduce throttle.</td></tr>
+    <tr><td>Sensor drift, spike, or stuck value</td><td>A measurement looks biased, jumps, or stops changing.</td><td>Switch to the backup sensor.</td></tr>
+    <tr><td>Unsafe limit override</td><td>An operating limit exceeds its design value.</td><td>Restore safe limits. The program can reject unsafe changes without an override.</td></tr>
+  </table>
+  <h3>Who is allowed to act?</h3>
+  <table>
+    <tr><th>Mode</th><th>Behavior</th></tr>
+    <tr><td>MANUAL</td><td>You decide on costly actions. If Self-Heal is on, the system may still perform an approved safe, reversible repair.</td></tr>
+    <tr><td>TIMED_AUTOPILOT</td><td>The autopilot waits for the response window before performing eligible costly actions; a human can intervene.</td></tr>
+    <tr><td>FULL_AUTO</td><td>The autopilot handles eligible recommendations immediately; it may assign work to a suitable crew member.</td></tr>
+  </table>
+  <p>Self-Heal is a separate setting from Autonomy. It handles safe actions—repairs that avoid fuel or limited supplies and do not override the operator. Turning it off disables automatic self-healing but does not itself switch the autonomy mode. If an automatic repair fails repeatedly or cannot safely handle a problem, it can be escalated for human attention.</p>
+  <div class="warning"><strong>Watch for costly actions.</strong> Evasive maneuvers and course corrections consume fuel; sealing a breach uses sealant. Preview recommendations when you are unsure, and check remaining resources before executing.</div>
+</section>
+
+<section class="page">
+  <h2>5. The 12 built-in scenarios</h2>
+  <p>Scenario numbers are zero-based in the CLI; the Planner shows their names. Scheduled events occur after the mission has advanced to the listed approximate tick.</p>
+  <table>
+    <tr><th>Index</th><th>Scenario</th><th>What it demonstrates</th></tr>
+    <tr><td>0</td><td>Free Flight</td><td>No scripted fault; a calm place to learn the controls.</td></tr>
+    <tr><td>1</td><td>Fuel Leak</td><td>Propulsion fuel leak.</td></tr>
+    <tr><td>2</td><td>Engine Trouble</td><td>Engine misfire, followed by overheating and coolant trouble.</td></tr>
+    <tr><td>3</td><td>Power Crisis</td><td>Solar failure and power management.</td></tr>
+    <tr><td>4</td><td>Lost in Space</td><td>Attitude sensor drift and navigation drift.</td></tr>
+    <tr><td>5</td><td>Antenna Blackout</td><td>Communications dropout.</td></tr>
+    <tr><td>6</td><td>Hull Breach</td><td>Cabin breach followed by scrubber failure.</td></tr>
+    <tr><td>7</td><td>Solar Storm</td><td>Radiation storm and sheltering.</td></tr>
+    <tr><td>8</td><td>Debris Alert</td><td>Two debris threats at different times.</td></tr>
+    <tr><td>9</td><td>Computer Crash</td><td>Computer fault and radiation storm.</td></tr>
+    <tr><td>10</td><td>Cascading Failure</td><td>Multiple sequential failures across propulsion, thermal, environment, computer, and life support.</td></tr>
+    <tr><td>11</td><td>Endless Chaos</td><td>Chaos Director can introduce randomized events when enabled.</td></tr>
+  </table>
+  <h3>A good practice run</h3>
+  <ol>
+    <li>Start Free Flight on EASY; observe the basic gauges and mission progress.</li>
+    <li>Start Fuel Leak on NORMAL; watch the fuel trend and read the recommendation card.</li>
+    <li>Preview the throttle recommendation, then execute it and compare what changes.</li>
+    <li>Try Manual, then Timed Autopilot, then Full Auto on another run.</li>
+    <li>Try Cascading Failure only after you are comfortable with the controls.</li>
+  </ol>
+</section>
+
+<section class="page">
+  <h2>6. Using the command line</h2>
+  <p>Start the CLI in PowerShell with <code>.\run.bat --cli</code>. It prints a help line. Type one command per line and press Enter. Type <code>quit</code> to leave. Commands are examples, not real spacecraft instructions.</p>
+  <h3>Beginner sequence</h3>
+  <pre>help
+status
+scenario 1
+uplink off
+inject fuel-leak
+tick 4
+status
+preview reduce-throttle 10
+exec reduce-throttle
+report
+quit</pre>
+  <p><code>scenario 1</code> configures the Fuel Leak scenario. You can instead use <code>inject fuel-leak</code> to add the fault directly. <code>tick 4</code> advances four steps. The Preview command describes a possible future without advancing the live mission. Execute only after the recommendation exists.</p>
+  <h3>Command reference</h3>
+  <table>
+    <tr><th>Command</th><th>Purpose / example</th></tr>
+    <tr><td><code>help</code>, <code>status</code></td><td>Show command help or current mission summary.</td></tr>
+    <tr><td><code>tick</code>, <code>tick 5</code></td><td>Advance one tick or the requested number of ticks.</td></tr>
+    <tr><td><code>throttle 60</code></td><td>Request a throttle percentage between 0 and 100, subject to current limits.</td></tr>
+    <tr><td><code>inject fuel-leak</code></td><td>Inject a supported fault. Fault names accept hyphens or underscores.</td></tr>
+    <tr><td><code>autonomy manual</code><br><code>autonomy timed</code><br><code>autonomy full</code></td><td>Choose response mode.</td></tr>
+    <tr><td><code>heal on</code> / <code>heal off</code></td><td>Enable/disable automatic safe repair.</td></tr>
+    <tr><td><code>uplink on</code> / <code>uplink off</code></td><td>Enable/disable command transmission delay.</td></tr>
+    <tr><td><code>limits</code><br><code>limits MAX_THROTTLE 75</code></td><td>List or change an operating limit. Unsafe values require the explicit override option.</td></tr>
+    <tr><td><code>crew</code><br><code>task Pilot REST</code></td><td>List crew or assign a crew task. Tasks: EVA_REPAIR, MEDICAL_CARE, MANUAL_REBOOT, REST.</td></tr>
+    <tr><td><code>preview reduce-throttle 10</code></td><td>Preview a recommendation for 10 future ticks.</td></tr>
+    <tr><td><code>exec reduce-throttle</code><br><code>dismiss reduce-throttle</code></td><td>Execute or dismiss a currently available recommendation by ID.</td></tr>
+    <tr><td><code>scenario 10</code></td><td>Load a scenario (valid indexes 0 through 11).</td></tr>
+    <tr><td><code>config destination moon</code><br><code>config craft explorer</code><br><code>config difficulty hard</code></td><td>Change mission configuration and reset the mission.</td></tr>
+    <tr><td><code>seek 10</code></td><td>Inspect the recorded state at a tick. Use the GUI Replay view for playback controls.</td></tr>
+    <tr><td><code>report</code></td><td>Print a short textual mission summary.</td></tr>
+    <tr><td><code>quit</code></td><td>Exit the CLI.</td></tr>
+  </table>
+  <p>CLI events are printed in the terminal and appended to <code>out\mission-events.log</code>. Report exports go to <code>out\mission-report.html</code> and <code>out\telemetry.csv</code> from the Reports view or corresponding export controls.</p>
+</section>
+
+<section class="page">
+  <h2>7. Useful controls, results, and troubleshooting</h2>
+  <h3>Keyboard shortcuts in the GUI</h3>
+  <table>
+    <tr><th>Shortcut</th><th>Action</th></tr>
+    <tr><td>0–9</td><td>Switch views in navigation-rail order.</td></tr>
+    <tr><td>Space</td><td>Start or pause mission ticking.</td></tr>
+    <tr><td>Ctrl+K</td><td>Open Console and focus the command field.</td></tr>
+    <tr><td>Ctrl+S</td><td>Capture all GUI screenshots into <code>out\screenshots</code>.</td></tr>
+    <tr><td>9</td><td>Open Settings (the tenth view in the navigation order).</td></tr>
+    <tr><td>F11</td><td>Toggle full-screen mode.</td></tr>
+    <tr><td>Escape</td><td>Clear the command field.</td></tr>
+  </table>
+  <h3>Where files go</h3>
+  <ul>
+    <li><code>out\mission-report.html</code> — report exported from the application.</li>
+    <li><code>out\telemetry.csv</code> — comma-separated telemetry suitable for spreadsheet software.</li>
+    <li><code>out\mission-events.log</code> — events recorded while using the CLI.</li>
+    <li><code>docs\sample-mission-report.html</code> — included example report from a completed mission.</li>
+    <li><code>out\screenshots\</code> — screenshot matrix created by <code>Ctrl+S</code> or <code>--screenshots</code>.</li>
+    <li><code>docs\screenshots\</code> — representative screenshots included with the project.</li>
+  </ul>
+  <h3>Common problems</h3>
+  <table>
+    <tr><th>What happens</th><th>What to try</th></tr>
+    <tr><td><code>javac is not recognized</code></td><td>Install JDK 17+ (not just a runtime), add its <code>bin</code> directory to PATH, then close and reopen PowerShell.</td></tr>
+    <tr><td><code>.\run.bat is not recognized</code></td><td>Change directory to the project root (the folder containing <code>run.bat</code>) and try again.</td></tr>
+    <tr><td>The CLI exits after an error</td><td>Current builds print most invalid-command errors and keep running. Update to the latest repository branch if your copy predates the CLI fix.</td></tr>
+    <tr><td>The GUI is too large or clipped</td><td>The desktop window requires a usable area of at least about 1280×800. Maximize the window and check display scaling.</td></tr>
+    <tr><td>Nothing seems to happen</td><td>Check that the mission is running (top LAUNCH control or Space). Use status on the Console view to see the tick and mission state.</td></tr>
+    <tr><td>Commands seem to arrive late</td><td>Uplink delay may be enabled. Turn it off for immediate commands, or inspect the comms indicator and queued commands.</td></tr>
+    <tr><td>The report looks unfinished</td><td>A live mission report describes the current state. Let a mission complete to see a final outcome and grade.</td></tr>
+    <tr><td>No sound</td><td>Sound depends on the computer's audio output. Check the Sound alerts toggle; the app can use silent mode when no audio device is available.</td></tr>
+  </table>
+  <div class="tip"><strong>Resetting:</strong> use Planner to configure a fresh mission, or choose a scenario again from the CLI. This resets mission state. Reports and logs under <code>out</code> are generated files; keep or copy anything you want before replacing it.</div>
+</section>
+
+<section class="page">
+  <h2>8. What is happening inside?</h2>
+  <p>This section is optional. It explains the program in plain language for readers curious about how the pieces fit together.</p>
+  <h3>The mission loop</h3>
+  <ol>
+    <li>The <strong>Spacecraft model</strong> updates subsystems, resources, crew, and physical conditions.</li>
+    <li><strong>Sensors</strong> take readings and retain a short history.</li>
+    <li><strong>Detection</strong> looks for values that cross limits or change unusually quickly; trend analysis estimates what might happen next.</li>
+    <li>The <strong>Advisor</strong> matches detected conditions to recommendations.</li>
+    <li>The <strong>response chain</strong> checks for safe self-healing, autopilot action, crew assignment, or escalation to you.</li>
+    <li>The engine publishes events and records an immutable snapshot for display, reports, and replay.</li>
+  </ol>
+  <h3>Project folders in everyday language</h3>
+  <table>
+    <tr><th>Package</th><th>Responsibility</th></tr>
+    <tr><td><code>api</code></td><td>Shared boundary and data records used between the GUI and simulation.</td></tr>
+    <tr><td><code>model</code>, <code>sensor</code>, <code>resource</code>, <code>crew</code>, <code>fault</code></td><td>Objects representing the vehicle, its instruments, supplies, people, and problems.</td></tr>
+    <tr><td><code>detection</code>, <code>advisor</code>, <code>action</code>, <code>autonomy</code></td><td>Find problems, propose responses, perform fixes, and decide who may act.</td></tr>
+    <tr><td><code>simulation</code>, <code>scenario</code>-related types, <code>comms</code>, <code>replay</code></td><td>Advance the mission, inject scheduled events, model delayed commands, and retain history.</td></tr>
+    <tr><td><code>event</code>, <code>scoring</code>, <code>report</code></td><td>Notify listeners, track results/achievements, and produce HTML/text/CSV output.</td></tr>
+    <tr><td><code>gui</code></td><td>Build the Swing desktop window, views, themes, controls, sound, and graphics.</td></tr>
+  </table>
+  <h3>Patterns, without jargon</h3>
+  <ul>
+    <li><strong>Observer / Event Bus:</strong> the engine announces an event once; screens, logs, and sound can each react.</li>
+    <li><strong>Strategy:</strong> different detection, autonomy, and theme choices can be swapped.</li>
+    <li><strong>Command:</strong> a corrective action is represented as an object that can be recommended, previewed, or executed.</li>
+    <li><strong>Chain of Responsibility:</strong> a problem is offered to self-healing, autopilot, crew, and finally the human.</li>
+    <li><strong>Visitor:</strong> the same mission data can be rendered as HTML, text, or CSV.</li>
+    <li><strong>Prototype / Memento:</strong> a simulation can be copied for what-if analysis, while recorded snapshots support replay.</li>
+    <li><strong>MVC boundary:</strong> the GUI asks the controller API for data/actions; it does not directly edit the simulation engine.</li>
+  </ul>
+  <h3>Checks and further reading</h3>
+  <p>The self-test mode checks core model behavior, deterministic runs, response escalation, self-healing, GUI interactions, replay, reports, and the demo workflow. The screenshot mode checks that all ten views can render in four themes and two resolutions.</p>
+  <ul>
+    <li><code>README.md</code> — quick setup and run instructions.</li>
+    <li><code>docs\OOP_CONCEPT_MAP.md</code> — object-oriented examples tied to source files.</li>
+    <li><code>docs\ARCHITECTURE.md</code> and <code>docs\puml\</code> — architecture explanations and diagrams.</li>
+    <li><code>PROJECT_CONTEXT.md</code> — detailed requirements and implementation history.</li>
+  </ul>
+  <hr>
+  <p><strong>That is enough to get started.</strong> Begin with Free Flight, learn the Dashboard, then explore one fault at a time. Use Preview when available, and treat recommendations as explanations you can learn from—not as a requirement to automate every decision.</p>
+  <p class="small">OrbitalX is a Java educational simulation. It does not connect to, control, or provide advice for any real spacecraft.</p>
+</section>
+</body>
+</html>

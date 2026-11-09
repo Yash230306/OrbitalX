@@ -75,7 +75,8 @@ Events are printed to the terminal and appended to `out/mission-events.log`; rep
 - `0`–`9`: select views in the order shown in the navigation rail.
 - `Space`: start/pause the mission.
 - `Ctrl+K`: focus the command field.
-- `Ctrl+S`: open Settings.
+- `Ctrl+S`: capture the screenshot matrix into `out\screenshots`.
+- `9`: open Settings.
 - `F11`: toggle fullscreen.
 - `Escape`: clear the active command.
 
@@ -86,6 +87,7 @@ The GUI Console view's command field supports Up/Down history and Tab completion
 The UI depends on the `SimulationController` API rather than the engine. `DefaultSimulationController` is a facade over `SimulationEngine`; the engine composes the spacecraft model, detection/advice/autonomy pipeline, event bus, replay history, scoring, and report generation. The OOP map and diagrams are maintained in [`docs/OOP_CONCEPT_MAP.md`](docs/OOP_CONCEPT_MAP.md), [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), and [`docs/puml/`](docs/puml/).
 
 See [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) for the A1–A17 requirements and delivery record. Representative UI and scenario captures are in [`docs/screenshots/`](docs/screenshots/); a generated completed-mission example is [`docs/sample-mission-report.html`](docs/sample-mission-report.html).
+For a first-time walkthrough, see the [Beginner's Guide PDF](docs/BEGINNER_GUIDE.pdf) (editable HTML source: [`docs/BEGINNER_GUIDE.html`](docs/BEGINNER_GUIDE.html)).
 
 ## Screenshot gallery
 
