@@ -34,7 +34,9 @@ public interface SimulationController {
     String getSetting(String key, String fallback);
     void setSetting(String key, String value);
     void addTickListener(TickListener listener);
+    void removeTickListener(TickListener listener);
     void addEventListener(MissionEventListener listener);
+    void removeEventListener(MissionEventListener listener);
     SimulationSnapshot snapshot();
     SimulationController fork();
 }

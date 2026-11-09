@@ -1,9 +1,9 @@
 package com.orbitalix.gui;
 
 import com.orbitalix.api.*;
+import com.orbitalix.gui.core.View;
 import com.orbitalix.gui.theme.Theme;
 
-import javax.swing.JPanel;
 import java.awt.*;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Path2D;
@@ -11,31 +11,17 @@ import java.util.List;
 import java.util.Locale;
 
 /** Custom Java2D view canvas used by all mission-control panels. */
-public final class MissionView extends JPanel implements TickListener {
+public final class MissionView extends View {
     private final String title;
-    private final SimulationController controller;
-    private final Theme theme;
-    private SimulationSnapshot snapshot;
 
     public MissionView(String title, SimulationController controller, Theme theme) {
+        super(controller, theme);
         this.title = title;
-        this.controller = controller;
-        this.theme = theme;
-        this.snapshot = controller.snapshot();
-        setOpaque(true);
-        setBackground(theme.background());
-        controller.addTickListener(this);
     }
 
     public String title() { return title; }
-    @Override public void onTick(SimulationSnapshot value) { snapshot = value; repaint(); }
 
-    @Override protected void paintComponent(Graphics graphics) {
-        super.paintComponent(graphics);
-        Graphics2D g = (Graphics2D) graphics.create();
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+    @Override protected void paintView(Graphics2D g) {
         int width = getWidth(), height = getHeight();
         drawBackground(g, width, height);
         g.setColor(theme.foreground());
@@ -59,7 +45,6 @@ public final class MissionView extends JPanel implements TickListener {
             case "Settings" -> drawSettings(g, width, height);
             default -> drawDashboard(g, width, height);
         }
-        g.dispose();
     }
 
     private void drawBackground(Graphics2D g, int width, int height) {

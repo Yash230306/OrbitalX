@@ -59,7 +59,9 @@ public final class DefaultSimulationController implements SimulationController {
     @Override public String getSetting(String key, String fallback) { return Settings.getInstance().get(key, fallback); }
     @Override public void setSetting(String key, String value) { Settings.getInstance().put(key, value); }
     @Override public void addTickListener(TickListener listener) { engine.addTickListener(listener); }
+    @Override public void removeTickListener(TickListener listener) { engine.removeTickListener(listener); }
     @Override public void addEventListener(MissionEventListener listener) { engine.addEventListener(listener); }
+    @Override public void removeEventListener(MissionEventListener listener) { engine.removeEventListener(listener); }
     @Override public SimulationSnapshot snapshot() { return engine.snapshot(); }
     @Override public SimulationController fork() { return new DefaultSimulationController(engine.copy()); }
     public SimulationEngine engine() { return engine; }

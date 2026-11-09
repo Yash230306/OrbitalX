@@ -16,6 +16,7 @@ public final class EventBus {
     }
     public static final Topic<MissionEvent> MISSION_EVENTS = new Topic<>("mission-events", MissionEvent.class);
     private final Map<Topic<?>, CopyOnWriteArrayList<Consumer<?>>> listeners = new ConcurrentHashMap<>();
+    private final Map<com.orbitalix.api.MissionEventListener, AutoCloseable> missionSubscriptions = new ConcurrentHashMap<>();
 
     public <T> AutoCloseable subscribe(Topic<T> topic, Consumer<? super T> listener) {
         Objects.requireNonNull(topic);
@@ -37,7 +38,14 @@ public final class EventBus {
     }
 
     public void addListener(com.orbitalix.api.MissionEventListener listener) {
-        subscribe(MISSION_EVENTS, Objects.requireNonNull(listener)::onEvent);
+        Objects.requireNonNull(listener);
+        missionSubscriptions.computeIfAbsent(listener, value -> subscribe(MISSION_EVENTS, value::onEvent));
+    }
+    public void removeListener(com.orbitalix.api.MissionEventListener listener) {
+        AutoCloseable subscription = missionSubscriptions.remove(listener);
+        if (subscription == null) return;
+        try { subscription.close(); }
+        catch (Exception ex) { throw new IllegalStateException("Could not remove mission event listener", ex); }
     }
     public int subscriberCount(Topic<?> topic) {
         return listeners.getOrDefault(topic, new CopyOnWriteArrayList<>()).size();

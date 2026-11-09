@@ -808,7 +808,9 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
         for (TickListener listener : List.copyOf(tickListeners)) listener.onTick(value);
     }
     public synchronized void addTickListener(TickListener listener) { tickListeners.add(Objects.requireNonNull(listener)); }
+    public synchronized void removeTickListener(TickListener listener) { tickListeners.remove(listener); }
     public synchronized void addEventListener(MissionEventListener listener) { eventBus.addListener(listener); }
+    public synchronized void removeEventListener(MissionEventListener listener) { eventBus.removeListener(listener); }
     public synchronized AutoCloseable subscribeEvents(MissionEventListener listener) {
         return eventBus.subscribe(EventBus.MISSION_EVENTS, Objects.requireNonNull(listener)::onEvent);
     }

@@ -1,7 +1,13 @@
 package com.orbitalix.gui;
 
 import com.orbitalix.api.AutonomyMode;
+import com.orbitalix.api.MissionEventListener;
 import com.orbitalix.api.SimulationController;
+import com.orbitalix.gui.core.View;
+import com.orbitalix.gui.core.ViewRegistry;
+import com.orbitalix.gui.core.SplashScreen;
+import com.orbitalix.gui.core.BottomTicker;
+import com.orbitalix.gui.kit.ToastLayer;
 import com.orbitalix.gui.theme.Themes;
 
 import javax.swing.*;
@@ -18,32 +24,69 @@ public final class MainWindow extends JFrame {
     private static final List<String> VIEWS = List.of("Planner", "Dashboard", "Cutaway", "Orbit",
             "Systems", "Crew", "Replay", "Console", "Reports", "Settings");
     private final SimulationController controller;
+    private final ViewRegistry viewRegistry = new ViewRegistry();
     private final Timer simulationTimer;
     private final Timer animationTimer;
-    private final JPanel stage = new JPanel(new BorderLayout());
+    private final JLayeredPane stage = new JLayeredPane() {
+        @Override public void doLayout() {
+            for (Component component : getComponents()) component.setBounds(0, 0, getWidth(), getHeight());
+        }
+    };
+    private final ToastLayer toastLayer = new ToastLayer();
     private final JLabel status = new JLabel("SYSTEM NOMINAL");
     private Themes theme;
     private String selectedView = "Dashboard";
     private int speed = 2;
     private boolean fullScreen;
     private final JTextField commandField = new JTextField();
-    private MissionView activeView;
+    private View activeView;
+    private SplashScreen splashScreen;
+    private JPanel root;
+    private BottomTicker bottomTicker;
+    private MissionEventListener toastListener;
 
     public MainWindow(SimulationController controller) {
         super("OrbitalIX | Mission Control");
         this.controller = controller;
         this.theme = readTheme();
+        for (String view : VIEWS) viewRegistry.register(view, () -> new MissionView(view, controller, theme));
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setMinimumSize(new Dimension(1280, 800));
         setSize(1500, 920);
         setLocationRelativeTo(null);
 
+        stage.setLayout(null);
         stage.setOpaque(true);
         stage.setBackground(theme.background());
-        JPanel root = createShell();
+        root = createShell();
         setContentPane(root);
         showView(selectedView);
         installShortcuts(root);
+        splashScreen = new SplashScreen(theme);
+        stage.remove(activeView);
+        stage.add(splashScreen, JLayeredPane.DRAG_LAYER);
+        stage.add(toastLayer, JLayeredPane.PALETTE_LAYER);
+        SplashScreen openingSplash = splashScreen;
+        Timer splashTimer = new Timer(1100, event -> {
+            if (splashScreen == openingSplash) {
+                stage.remove(openingSplash);
+                splashScreen = null;
+                stage.add(activeView, JLayeredPane.DEFAULT_LAYER);
+                stage.revalidate(); stage.repaint();
+            }
+        });
+        splashTimer.setRepeats(false);
+        splashTimer.start();
+        toastListener = event -> {
+            java.awt.Color color = switch (event.severity()) {
+                case INFO -> theme.accent();
+                case LOW, MEDIUM -> theme.warning();
+                case HIGH -> theme.critical();
+                case CRITICAL -> theme.critical();
+            };
+            toastLayer.showToast(event.message(), color, 2400);
+        };
+        controller.addEventListener(toastListener);
 
         simulationTimer = new Timer(1000 / speed, event -> {
             if (controller.isRunning()) controller.tick();
@@ -64,12 +107,19 @@ public final class MainWindow extends JFrame {
 
     private void showView(String name) {
         selectedView = name;
-        activeView = new MissionView(name, controller, theme);
-        stage.removeAll();
-        stage.add(activeView, BorderLayout.CENTER);
+        if (activeView != null) {
+            activeView.close();
+            stage.remove(activeView);
+        }
+        if (splashScreen != null) {
+            stage.remove(splashScreen);
+            splashScreen = null;
+        }
+        activeView = viewRegistry.create(name);
+        stage.add(activeView, JLayeredPane.DEFAULT_LAYER);
+        if (toastLayer.getParent() != stage) stage.add(toastLayer, JLayeredPane.PALETTE_LAYER);
         stage.revalidate();
         stage.repaint();
-        setContentPane(createShell());
         revalidate();
         repaint();
     }
@@ -87,7 +137,11 @@ public final class MainWindow extends JFrame {
     private void cycleTheme() {
         theme = Themes.values()[(theme.ordinal() + 1) % Themes.values().length];
         controller.setSetting("theme", theme.name());
+        if (bottomTicker != null) bottomTicker.close();
+        root = createShell();
+        setContentPane(root);
         showView(selectedView);
+        installShortcuts(root);
     }
 
     private void toggleSelfHealing() {
@@ -245,12 +299,17 @@ public final class MainWindow extends JFrame {
 
     private final class Footer extends JPanel {
         private Footer() {
-            setLayout(new BorderLayout(12, 0));
+            setLayout(new BorderLayout(0, 3));
             setBackground(theme.panel());
-            setBorder(new EmptyBorder(8, 14, 8, 14));
+            setBorder(new EmptyBorder(4, 8, 8, 8));
             status.setForeground(theme.nominal());
             status.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            add(status, BorderLayout.WEST);
+            bottomTicker = new BottomTicker(controller, theme);
+            add(bottomTicker, BorderLayout.NORTH);
+            JPanel controls = new JPanel(new BorderLayout(12, 0));
+            controls.setOpaque(false);
+            controls.setBorder(new EmptyBorder(0, 6, 0, 6));
+            controls.add(status, BorderLayout.WEST);
             commandField.setPreferredSize(new Dimension(500, 34));
             commandField.setBackground(theme.background());
             commandField.setForeground(theme.foreground());
@@ -259,11 +318,21 @@ public final class MainWindow extends JFrame {
                     new EmptyBorder(4, 10, 4, 10)));
             commandField.setToolTipText("Enter onboard command (help for command list)");
             commandField.addActionListener(event -> runCommand());
-            add(commandField, BorderLayout.EAST);
+            controls.add(commandField, BorderLayout.EAST);
             JButton execute = new JButton("SEND");
             execute.setForeground(theme.foreground()); execute.setBackground(theme.panelRaised());
             execute.addActionListener(event -> runCommand());
-            add(execute, BorderLayout.CENTER);
+            controls.add(execute, BorderLayout.CENTER);
+            add(controls, BorderLayout.CENTER);
         }
+    }
+
+    @Override public void dispose() {
+        if (simulationTimer != null) simulationTimer.stop();
+        if (animationTimer != null) animationTimer.stop();
+        if (activeView != null) activeView.close();
+        if (bottomTicker != null) bottomTicker.close();
+        if (toastListener != null) controller.removeEventListener(toastListener);
+        super.dispose();
     }
 }
