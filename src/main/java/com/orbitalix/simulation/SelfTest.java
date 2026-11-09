@@ -6,8 +6,19 @@ import com.orbitalix.api.LimitType;
 import com.orbitalix.config.CraftType;
 import com.orbitalix.config.Destination;
 import com.orbitalix.config.Difficulty;
+import com.orbitalix.api.FaultType;
+import com.orbitalix.fault.Fault;
+import com.orbitalix.fault.FaultFactory;
+import com.orbitalix.fault.FaultInjector;
+import com.orbitalix.fault.FaultTarget;
+import com.orbitalix.resource.FuelTank;
+import com.orbitalix.sensor.DriftDecorator;
+import com.orbitalix.sensor.GyroSensor;
+import com.orbitalix.sensor.SpikeDecorator;
 
+import java.util.EnumMap;
 import java.util.Locale;
+import java.util.Map;
 
 /** Headless regression matrix verifies seeded determinism and representative autonomy survival. */
 public final class SelfTest {
@@ -39,6 +50,7 @@ public final class SelfTest {
             }
         }
         failures += runApiChecks();
+        failures += runSensorFaultResourceChecks();
         System.out.println(failures == 0 ? "SELFTEST PASS (determinism and survival checks)" : "SELFTEST FAIL: " + failures + " assertion(s)");
         return failures == 0 ? 0 : 1;
     }
@@ -75,6 +87,41 @@ public final class SelfTest {
             // Unsafe values require explicit override.
         }
         if (failures != 0) System.err.println("API checks failed: " + failures);
+        return failures;
+    }
+
+    private static int runSensorFaultResourceChecks() {
+        int failures = 0;
+        GyroSensor gyro = new GyroSensor("gyro-test", 2);
+        gyro.read();
+        gyro.read();
+        if (gyro.history().size() != 2 || gyro.copy().history().size() != 2) failures++;
+        DriftDecorator drift = new DriftDecorator(gyro, 0.5);
+        if (drift.measure() != 2.5 || drift.measure() != 3.0) failures++;
+        SpikeDecorator spike = new SpikeDecorator(gyro, 20);
+        if (spike.measure() != 22 || spike.measure() != 2) failures++;
+
+        FuelTank tank = new FuelTank(100, 95, 20, 20);
+        if (tank.crossFeed(10) != 5 || tank.level() != 100 || tank.reserveLevel() != 15) failures++;
+        FuelTank tankCopy = tank.copy();
+        tankCopy.consume(10);
+        if (tank.level() != 100 || tankCopy.level() != 90 || tankCopy.reserveLevel() != 15) failures++;
+
+        for (FaultType type : FaultType.values()) {
+            Fault fault = FaultFactory.create(type);
+            if (fault.type() != type && type != FaultType.SENSOR_DRIFT) failures++;
+        }
+        Map<FaultType, Integer> active = new EnumMap<>(FaultType.class);
+        FaultTarget target = new FaultTarget() {
+            @Override public void activateFault(FaultType type, int durationTicks) { active.put(type, durationTicks); }
+            @Override public boolean isFaultActive(FaultType type) { return active.containsKey(type); }
+            @Override public void clearFault(FaultType type) { active.remove(type); }
+        };
+        Fault finite = FaultFactory.create(FaultType.DROPOUT);
+        FaultInjector injector = new FaultInjector();
+        injector.inject(target, finite);
+        if (!finite.isActive() || !target.isFaultActive(FaultType.DROPOUT)) failures++;
+        if (failures != 0) System.err.println("Sensor/fault/resource checks failed: " + failures);
         return failures;
     }
 }

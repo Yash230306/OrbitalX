@@ -528,7 +528,7 @@ Do in this order. Each task must compile and run before starting the next.
 
 **Release R1: the engine (console only)**
 - [x] A1 (~50 min) Project setup + git and GitHub (section 0) + `api` contract (section 8) + `exception`, `util` (Copyable, DeterministicRandom, RingBuffer, EventLogger, Settings), `config` (builder, enums, craft factories)
-- [ ] A2 (~60 min) `sensor` (interface, base, 9 sensors, 4 decorators), `resource`, `fault` (all 14 Fault classes, FaultFactory, FaultInjector)
+- [x] A2 (~60 min) `sensor` (interface, base, 9 sensors, 4 decorators), `resource`, `fault` (all 14 Fault classes, FaultFactory, FaultInjector)
 - [ ] A3 (~70 min) `model` part 1: `SystemComponent`, `Subsystem` (Template Method), `Spacecraft`, `Mission`, `OperatingLimits`, `SpaceEnvironment`, `OrbitModel`, Propulsion, Power, Thermal, Communication, Attitude subsystems with the world rules of section 5
 - [ ] A4 (~60 min) `model` part 2: LifeSupport, Navigation, Computer subsystems, `DependencyGraph`, and `crew` (4 CrewMember subclasses, CrewTask, CrewRoster)
 - [ ] A5 (~45 min) `detection`, `event` (EventBus, listeners), and the `Copyable` implementations across model, sensors, resources, faults, crew (needed for fork)
@@ -594,16 +594,17 @@ GUI screenshots (3 slides); demo scenarios and results; testing; conclusion and 
 - Last updated by: Copilot SDK in VS Code, 2026-11-10
 - Repo: https://github.com/Yash230306/OrbitalX (new private repository); branch `a1-a16-work`.
 - Release reached: none
-- Currently in progress: A1 complete (API/config/utilities/exceptions and build scripts); A2 through A17 remain.
-- Next step: Implement the concrete sensor/decorator, resource, and fault package (A2).
+- Currently in progress: A1-A2 complete; A3-A17 remain.
+- Next step: Implement spacecraft composite, subsystems, mission physics, operating limits, space environment, and orbit model (A3).
 - Compile command: `.\compile.bat`
 - Run commands: GUI: `.\run.bat`   Console: `.\run.bat --cli`   Selftest: `.\run.bat --selftest`   Screenshots: `.\run.bat --screenshots out\screenshots`
 - Decisions made: plain `javac --release 17` because Maven is unavailable; no external libraries.
-- Known issues: Simulation, GUI, and feature-specific packages are still consolidated/simplified and do not yet meet the detailed A2-A17 deliverables.
+- Known issues: A3-A17 model, action, autonomy, GUI, tuning, and documentation requirements remain.
 
 ## Progress log
 (AI: append one line per finished task, format `YYYY-MM-DD A1 done: <what exists now>`)
 - 2026-11-10 A1 done: private OrbitalX GitHub repository and Java 17 scripts; immutable API records, mission configuration builder/enums/factories, deterministic utilities, settings/logger, tick helpers, and checked exception hierarchy.
+- 2026-11-10 A2 done: nine typed sensors, four runtime decorators, bounded immutable sensor readings, four resource types, 14 fault implementations, fault factory/injector, and regression checks.
 - 2026-11-10 A7 baseline: deterministic simulation/controller, scenario matrix, console commands, history/replay snapshots, reports, and self-test are implemented in a consolidated engine.
 - 2026-11-10 A14 baseline: ten themed Java2D views, control-room shell, CLI controls, settings, exports, and headless screenshot harness are implemented with simplified interactions/rendering.
 - 2026-11-10 A15 done: 108 scenario/difficulty/autonomy runs and API regression checks pass; FULL_AUTO survives NORMAL Cascading Failure while MANUAL loses.
