@@ -2,10 +2,12 @@ package com.orbitalix.gui;
 
 import com.orbitalix.api.FaultType;
 import com.orbitalix.api.SimulationController;
+import com.orbitalix.gui.core.View;
 import com.orbitalix.gui.theme.Themes;
 
 import javax.imageio.ImageIO;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -28,12 +30,16 @@ public final class ScreenshotHarness {
         for (Themes theme : Themes.all()) {
             for (String view : VIEWS) {
                 for (int[] size : new int[][]{{1280, 720}, {1920, 1080}}) {
-                    MissionView panel = view.equals("Dashboard")
+                    View panel = view.equals("Dashboard")
                             ? new DashboardView(renderController, theme)
                             : view.equals("Cutaway") ? new CutawayView(renderController, theme)
                             : view.equals("Orbit") ? new OrbitView(renderController, theme)
+                            : view.equals("Planner") ? new PlannerView(renderController, theme)
+                            : view.equals("Console") ? new ConsoleView(renderController, theme)
+                            : view.equals("Settings") ? new SettingsView(renderController, theme, ignored -> {})
                             : new MissionView(view, renderController, theme);
                     panel.setSize(size[0], size[1]);
+                    layoutRecursively(panel);
                     BufferedImage image = new BufferedImage(size[0], size[1], BufferedImage.TYPE_INT_ARGB);
                     Graphics2D graphics = image.createGraphics();
                     panel.paint(graphics);
@@ -42,11 +48,19 @@ public final class ScreenshotHarness {
                     Path output = directory.resolve(view.toLowerCase() + "-" + theme.name().toLowerCase()
                             + "-" + size[0] + "x" + size[1] + ".png");
                     if (!ImageIO.write(image, "png", output.toFile())) throw new IOException("PNG writer unavailable");
+                    panel.close();
                     count++;
                 }
+
             }
         }
         System.out.println("Captured and verified " + count + " screenshots in " + directory.toAbsolutePath());
+    }
+
+    private static void layoutRecursively(Container container) {
+        container.doLayout();
+        for (java.awt.Component child : container.getComponents())
+            if (child instanceof Container nested) layoutRecursively(nested);
     }
 
     private static boolean hasVisualVariance(BufferedImage image) {

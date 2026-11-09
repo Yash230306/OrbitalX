@@ -31,7 +31,7 @@ public abstract class View extends JPanel implements TickListener {
         repaint();
     }
 
-    public final void close() { controller.removeTickListener(this); }
+    public void close() { controller.removeTickListener(this); }
     protected void onSnapshot(SimulationSnapshot value) {}
     protected void animate(double elapsedSeconds) {}
     public final void animateFrame(double elapsedSeconds) { animate(elapsedSeconds); }

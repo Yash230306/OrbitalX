@@ -54,6 +54,9 @@ public final class MainWindow extends JFrame {
             if (view.equals("Dashboard")) viewRegistry.register(view, () -> new DashboardView(controller, theme));
             else if (view.equals("Cutaway")) viewRegistry.register(view, () -> new CutawayView(controller, theme));
             else if (view.equals("Orbit")) viewRegistry.register(view, () -> new OrbitView(controller, theme));
+            else if (view.equals("Planner")) viewRegistry.register(view, () -> new PlannerView(controller, theme));
+            else if (view.equals("Console")) viewRegistry.register(view, () -> new ConsoleView(controller, theme));
+            else if (view.equals("Settings")) viewRegistry.register(view, () -> new SettingsView(controller, theme, this::selectTheme));
             else viewRegistry.register(view, () -> new MissionView(view, controller, theme));
         }
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -144,7 +147,11 @@ public final class MainWindow extends JFrame {
     }
 
     private void cycleTheme() {
-        theme = Themes.values()[(theme.ordinal() + 1) % Themes.values().length];
+        selectTheme(Themes.values()[(theme.ordinal() + 1) % Themes.values().length]);
+    }
+
+    private void selectTheme(Themes selected) {
+        theme = selected;
         controller.setSetting("theme", theme.name());
         if (bottomTicker != null) bottomTicker.close();
         root = createShell();

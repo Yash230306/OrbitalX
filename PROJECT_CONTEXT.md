@@ -541,7 +541,7 @@ Do in this order. Each task must compile and run before starting the next.
 - [x] A10 (~120 min) `gui.render3d` + `CutawayView` (3D spacecraft with effects) and `OrbitView`. **Tag R2.**
 
 **Release R3: the suite**
-- [ ] A11 (~70 min) `PlannerView` (launch countdown), `ConsoleView`, `SettingsView` (persisted)
+- [x] A11 (~70 min) `PlannerView` (launch countdown), `ConsoleView`, `SettingsView` (persisted)
 - [ ] A12 (~80 min) `SystemsView` (tree, sparklines, dependency graph with cascade pulses), `CrewView`
 - [ ] A13 (~70 min) `ReplayView` (scrubber, markers, tally), replay mode across all views, what-if popover polish
 - [ ] A14 (~70 min) `ReportsView` (preview, exports, grade stamp, achievements gallery), toasts, vignette, screen shake, tint, particles everywhere, sound wiring. **Tag R3.**
@@ -594,8 +594,8 @@ GUI screenshots (3 slides); demo scenarios and results; testing; conclusion and 
 - Last updated by: Copilot SDK in VS Code, 2026-11-10
 - Repo: https://github.com/Yash230306/OrbitalX (new private repository); branch `a1-a16-work`.
 - Release reached: R2 (A10)
-- Currently in progress: A1-A10 complete; A11-A17 remain. R2's 3D spacecraft renderer and interactive orbit view are in place and pass the screenshot matrix.
-- Next step: Build the Planner, Console, and persisted Settings interactions (A11), then continue through A17.
+- Currently in progress: A1-A11 complete; A12-A17 remain. Planner launch, terminal command interaction, and persisted display/settings preferences are implemented.
+- Next step: Implement the subsystem and crew operational views (A12), then complete replay, reports, visual QA, and delivery.
 - Compile command: `.\compile.bat`
 - Run commands: GUI: `.\run.bat`   Console: `.\run.bat --cli`   Selftest: `.\run.bat --selftest`   Screenshots: `.\run.bat --screenshots out\screenshots`
 - Decisions made: plain `javac --release 17` because Maven is unavailable; no external libraries.
@@ -614,6 +614,7 @@ GUI screenshots (3 slides); demo scenarios and results; testing; conclusion and 
 - 2026-11-10 A8 done: four themes, shared View lifecycle and registry, reusable widgets, animation/particle and synth/silent audio foundations, splash/ticker/toast shell, listener cleanup, and 80 headless screenshots across all views/themes/resolutions.
 - 2026-11-10 A9 done: dashboard throttle drag, operating-limit controls, clickable recommendation preview/execute/dismiss, preview popover, and 20-tile master-caution annunciator; headless interaction tests and 80 screenshots pass.
 - 2026-11-10 A10 done: painter's-order 3D renderer with Lambert shading and picking, eight subsystem meshes, rotatable/zoomable cutaway, pan/zoom orbit map with planned/actual/predicted tracks; interaction tests, `--selftest`, and 80 screenshots pass.
+- 2026-11-10 A11 done: selectable mission configuration with seed/scenario/chaos and launch countdown; terminal command input with history, Tab completion, and styled output; persisted theme/audio/effects/animation/scale settings with live theme application. Planner, Console, Settings, full `--selftest`, and 80 screenshots pass.
 - 2026-11-10 A14 baseline: ten themed Java2D views, control-room shell, CLI controls, settings, exports, and headless screenshot harness are implemented with simplified interactions/rendering.
 - 2026-11-10 A15 done: 108 scenario/difficulty/autonomy runs and API regression checks pass; FULL_AUTO survives NORMAL Cascading Failure while MANUAL loses.
 - 2026-11-10 A16 partial: all 80 view/theme/resolution screenshots render and pass nonblank checks; interactive demo and shortcut verification remain.

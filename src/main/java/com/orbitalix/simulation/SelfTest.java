@@ -12,7 +12,10 @@ import com.orbitalix.api.MissionEvent;
 import com.orbitalix.api.Severity;
 import com.orbitalix.gui.DashboardView;
 import com.orbitalix.gui.CutawayView;
+import com.orbitalix.gui.ConsoleView;
 import com.orbitalix.gui.OrbitView;
+import com.orbitalix.gui.PlannerView;
+import com.orbitalix.gui.SettingsView;
 import com.orbitalix.gui.render3d.Camera;
 import com.orbitalix.gui.render3d.Renderer;
 import com.orbitalix.gui.render3d.SpacecraftModel;
@@ -86,6 +89,7 @@ public final class SelfTest {
         failures += runReleaseOneIntegrationChecks();
         failures += runDashboardInteractionChecks();
         failures += runCutawayOrbitChecks();
+        failures += runPlannerConsoleSettingsChecks();
         System.out.println(failures == 0 ? "SELFTEST PASS (determinism and survival checks)" : "SELFTEST FAIL: " + failures + " assertion(s)");
         return failures == 0 ? 0 : 1;
     }
@@ -492,6 +496,44 @@ public final class SelfTest {
     private static MouseWheelEvent wheel(java.awt.Component component, int x, int y) {
         return new MouseWheelEvent(component, MouseEvent.MOUSE_WHEEL, System.currentTimeMillis(), 0,
                 x, y, 0, false, MouseWheelEvent.WHEEL_UNIT_SCROLL, 1, 1);
+    }
+
+    private static int runPlannerConsoleSettingsChecks() {
+        int failures = 0;
+        SimulationEngine engine = new SimulationEngine();
+        DefaultSimulationController controller = new DefaultSimulationController(engine);
+        PlannerView planner = new PlannerView(controller, Themes.DARK_MISSION);
+        planner.seedField().setText("not-a-number");
+        planner.launchButton().doClick();
+        failures += check(!controller.isRunning(), "Planner rejects an invalid seed");
+        planner.seedField().setText("77");
+        planner.scenarioSelector().setSelectedIndex(1);
+        planner.launchButton().doClick();
+        try { Thread.sleep(3_200); }
+        catch (InterruptedException ex) { Thread.currentThread().interrupt(); failures++; }
+        failures += check(controller.isRunning() && controller.snapshot().config().seed() == 77
+                && controller.snapshot().config().scenarioIndex() == 1, "Planner launch countdown and mission configuration");
+        planner.close();
+
+        ConsoleView console = new ConsoleView(controller, Themes.DARK_MISSION);
+        console.inputField().setText("status");
+        console.inputField().postActionEvent();
+        failures += check(console.consoleText().contains("T+") || console.consoleText().contains("tick"),
+                "Console command execution");
+        console.inputField().setText("not-a-command");
+        console.inputField().postActionEvent();
+        failures += check(console.consoleText().contains("ERROR:"), "Console surfaces parser errors");
+        console.close();
+
+        controller.setSetting("theme", Themes.DARK_MISSION.name());
+        SettingsView settings = new SettingsView(controller, Themes.DARK_MISSION,
+                selected -> controller.setSetting("theme", selected.name()));
+        settings.themeSelector().setSelectedItem(Themes.NEON);
+        failures += check(controller.getSetting("theme", "").equals(Themes.NEON.name()),
+                "Settings theme preference persistence");
+        controller.setSetting("theme", Themes.DARK_MISSION.name());
+        settings.close();
+        return failures;
     }
 
     private static int check(boolean passed, String label) {
