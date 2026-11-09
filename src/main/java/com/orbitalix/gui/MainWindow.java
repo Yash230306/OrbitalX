@@ -93,7 +93,6 @@ public final class MainWindow extends JFrame {
         splashScreen = new SplashScreen(theme);
         stage.remove(activeView);
         stage.add(splashScreen, JLayeredPane.DRAG_LAYER);
-        stage.add(toastLayer, JLayeredPane.PALETTE_LAYER);
         SplashScreen openingSplash = splashScreen;
         Timer splashTimer = new Timer(1100, event -> {
             if (splashScreen == openingSplash) {
