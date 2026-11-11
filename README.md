@@ -72,11 +72,10 @@ Events are printed to the terminal and appended to `out/mission-events.log`; rep
 
 ## GUI shortcuts
 
-- `0`–`9`: select views in the order shown in the navigation rail.
+- `0`–`9`: select Planner, Dashboard, Cutaway, Orbit, Systems, Crew, Replay, Console, Reports, and Settings, respectively. (The small numbers printed on the navigation rail use a different mapping.)
 - `Space`: start/pause the mission.
 - `Ctrl+K`: focus the command field.
 - `Ctrl+S`: capture the screenshot matrix into `out\screenshots`.
-- `9`: open Settings.
 - `F11`: toggle fullscreen.
 - `Escape`: clear the active command.
 

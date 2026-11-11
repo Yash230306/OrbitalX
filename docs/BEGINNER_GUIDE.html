@@ -61,9 +61,31 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
 </section>
 
 <p class="page-break">&nbsp;</p>
+<section class="page">
+  <h2>How to use this guide</h2>
+  <p>No Java, programming, or spacecraft knowledge is assumed. Read the chapters in order the first time; use this list to jump back to a topic later.</p>
+  <ol class="toc">
+    <li><a href="#start">Start here: what OrbitalX is and the words it uses</a></li>
+    <li><a href="#install">Install and open the application</a></li>
+    <li><a href="#first-mission">Plan and fly a first mission, click by click</a></li>
+    <li><a href="#screens">Screens and features, with screenshots</a></li>
+    <li><a href="#faults">Faults, recommendations, autonomy, and self-healing</a></li>
+    <li><a href="#scenarios">Built-in scenarios and a practice run</a></li>
+    <li><a href="#cli">Optional command line</a></li>
+    <li><a href="#oop-feature">Main learning goal: how OOP is actually used in OrbitalX</a></li>
+    <li><a href="#oop-map">OOP concepts mapped to real classes and features</a></li>
+    <li><a href="#oop-autonomy">How the object design powers autonomy, replay, and reports</a></li>
+    <li><a href="#oop-systems">Worked example: model objects become the Systems screen</a></li>
+  </ol>
+  <div class="tip"><strong>For an OOP presentation:</strong> follow the Dashboard fuel-recommendation example in chapters 8–10. It traces one feature from the visible button, through the controller and engine, to the concrete action and spacecraft object.</div>
+  <div class="note"><strong>Important distinction:</strong> when this guide names a class or interface, it refers to code that exists in this project. The OOP chapter explains what that code does while the simulator is running.</div>
+</section>
+
+<p class="page-break">&nbsp;</p>
 <section>
-  <h2>Start here</h2>
+  <h2 id="start">Start here</h2>
   <p>OrbitalX is a simulation, not a real spacecraft connection. Everything it changes—fuel, oxygen, faults, crew condition, and mission progress—is inside the program. It is safe to experiment with.</p>
+  <p>Think of it as a pretend spacecraft dashboard on your computer. You choose a mission, watch the readings change, and decide how to respond to simulated problems. You do not need to operate every feature at once: begin with Free Flight and learn one screen at a time.</p>
   <h3>What is a mission-control simulator?</h3>
   <p>Imagine a vehicle travelling toward a destination. It has engines, power, temperature control, communications, navigation, life support, a computer, supplies, and crew. The program advances the mission in small steps called <em>ticks</em>. On each tick, the simulated spacecraft consumes resources, instruments report values, the software looks for trouble, and recommendations may appear.</p>
   <p>A tick is a simulation step—not necessarily one real second. The GUI controls how quickly those steps run on your computer.</p>
@@ -77,27 +99,52 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
     <tr><td>Autonomy</td><td>How much authority the onboard autopilot has to take action.</td></tr>
     <tr><td>Uplink delay</td><td>A simulated wait before a command from mission control reaches the craft.</td></tr>
     <tr><td>Replay</td><td>A view of recorded earlier mission states; it does not rewind the live craft.</td></tr>
+    <tr><td>GUI</td><td>The graphical app: windows, screens, buttons, and pictures that you click.</td></tr>
+    <tr><td>CLI / Console</td><td>A text command area where you type a word or instruction and press Enter.</td></tr>
+    <tr><td>Tick</td><td>One simulated time-step. It is not necessarily one real-world second.</td></tr>
+    <tr><td>Source code</td><td>The Java files that explain how the app is built; you can use the app without editing them.</td></tr>
+    <tr><td>Class / object</td><td>In this project, a class is a Java definition such as <code>FuelTank</code>; a running object is one actual fuel tank belonging to this simulated spacecraft.</td></tr>
   </table>
   <div class="tip"><strong>First-time recommendation:</strong> run the GUI, open Planner, select Free Flight and EASY, leave the seed at 42, then launch. Watch the Dashboard before trying a fault scenario.</div>
   <p class="note"><strong>The central design idea is object-oriented programming (OOP).</strong> OrbitalX represents spacecraft parts, crew, sensors, faults, commands, and views as cooperating Java objects. The final chapter maps these real classes to abstraction, encapsulation, inheritance, polymorphism, and composition.</p>
 </section>
 
-<section class="page">
+<section class="page" id="install">
   <h2>1. Install, build, and start</h2>
   <h3>What you need</h3>
   <ul>
     <li>A Windows computer (this guide's commands use Windows).</li>
-    <li>Java Development Kit (JDK) version 17 or newer. The JDK includes both <code>java</code> and <code>javac</code>.</li>
-    <li>The OrbitalX project folder. If you cloned it, open PowerShell in that folder.</li>
+    <li>Java Development Kit (JDK) version 17 or newer. The JDK includes both <code>java</code> and <code>javac</code>. A Java runtime alone is not enough to compile the project.</li>
   </ul>
-  <h3>Start the graphical app</h3>
+  <h3>Step A: get the project folder</h3>
   <ol>
-    <li>Open the OrbitalX folder in File Explorer.</li>
-    <li>Click the folder address bar, type <code>powershell</code>, and press Enter. PowerShell opens in the project folder.</li>
-    <li>Run the command below. The script compiles the Java source and then opens the desktop app.</li>
+    <li>Open the project page: <code>https://github.com/Yash230306/OrbitalX</code>.</li>
+    <li>On GitHub, click the green <strong>Code</strong> button, choose <strong>Download ZIP</strong>, and wait for the ZIP file to download.</li>
+    <li>In File Explorer, right-click the downloaded ZIP and choose <strong>Extract All</strong>. Open the extracted project folder. The correct folder contains <code>run.bat</code>, <code>compile.bat</code>, <code>src</code>, and <code>docs</code>.</li>
+  </ol>
+  <h3>Step B: install/check Java</h3>
+  <ol>
+    <li>Install a JDK 17-or-newer build, such as <a href="https://adoptium.net/">Eclipse Temurin</a>, using its Windows installer. If the installer offers to add Java to PATH, enable that option.</li>
+    <li>Open PowerShell and type <code>java -version</code>, then <code>javac -version</code>. Both commands should report a version of 17 or newer. If PowerShell says a command is not recognized, finish the JDK installation and open a new PowerShell window.</li>
+  </ol>
+  <h3>Step C: start the graphical app</h3>
+  <ol>
+    <li>Open the extracted OrbitalX project folder in File Explorer. Check that you are in the folder containing <code>run.bat</code>, not one folder above or below it.</li>
+    <li>Click the File Explorer address bar, type <code>powershell</code>, and press Enter. PowerShell opens in that folder.</li>
+    <li>Type the command below and press Enter. The script compiles the Java source and then opens the desktop app.</li>
   </ol>
   <pre>.\run.bat</pre>
   <p>The first successful build prints <code>Compiled OK</code>. The desktop window should then appear. Keep the project files together; the scripts rely on the project folder structure.</p>
+  <p>The window opens on Dashboard. Click <strong>Planner</strong> in the left navigation rail to set up a new mission. The window needs a usable area of at least about 1280×800; maximize it if some controls look clipped.</p>
+  <h3>What the project folders are for</h3>
+  <table>
+    <tr><th>Folder / file</th><th>Plain-language purpose</th></tr>
+    <tr><td><code>src\main\java</code></td><td>The Java source code that makes the application.</td></tr>
+    <tr><td><code>docs</code></td><td>User guides, architecture notes, OOP maps, diagrams, and example reports.</td></tr>
+    <tr><td><code>out</code></td><td>Generated compiled files, exports, logs, and screenshots. It is created or filled when you run commands.</td></tr>
+    <tr><td><code>run.bat</code></td><td>Compiles and starts the app in the selected mode.</td></tr>
+    <tr><td><code>compile.bat</code></td><td>Compiles the program without opening the GUI.</td></tr>
+  </table>
   <h3>Other useful launch commands</h3>
   <table>
     <tr><th>Command</th><th>What it does</th></tr>
@@ -110,17 +157,23 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
   <p>On Linux/macOS, use <code>./run.sh</code>, <code>./run.sh --cli</code>, and <code>./compile.sh</code>.</p>
 </section>
 
-<section class="page">
+<section class="page" id="first-mission">
   <h2>2. Your first mission, step by step</h2>
+  <p>These steps assume the desktop window is open. The left rail changes screens; it does not create a second mission.</p>
   <ol>
-    <li><strong>Open Planner.</strong> It is also the first navigation item. Choose a destination, spacecraft, difficulty, and scenario.</li>
-    <li><strong>Keep the seed.</strong> The seed is a number that makes random events repeatable. The same setup and seed are useful when comparing runs.</li>
-    <li><strong>Choose a scenario.</strong> Free Flight is the calm introduction. Other scenarios schedule equipment problems at later ticks.</li>
-    <li><strong>Launch.</strong> The launch button begins a short countdown. At the end, the selected settings configure and start the mission.</li>
-    <li><strong>Watch the Dashboard.</strong> Read resource gauges, the mission progress line, and any advisor cards. Use the other views to inspect details.</li>
-    <li><strong>Respond to recommendations.</strong> Select Preview to estimate a possible action, Execute to send it, or Dismiss if you do not want that recommendation.</li>
-    <li><strong>Pause or continue.</strong> Use the top LAUNCH control or Space to start/pause. The exact button label changes with mission state.</li>
-    <li><strong>Review the outcome.</strong> Reports shows a score/grade, achievements, a report preview, and HTML/CSV export buttons.</li>
+    <li><strong>Open Planner.</strong> Click Planner in the left navigation. In OrbitalX, a view is one page of the mission-control window.</li>
+    <li><strong>Set the destination.</strong> Open DESTINATION and choose Moon for a short first trip.</li>
+    <li><strong>Set the craft.</strong> Open SPACECRAFT and keep Explorer for a balanced first run.</li>
+    <li><strong>Set difficulty and scenario.</strong> Choose EASY and Free Flight. This avoids scripted failures while you learn the gauges.</li>
+    <li><strong>Keep the seed.</strong> Leave 42 in DETERMINISTIC SEED so the run is repeatable. This number controls the simulation's repeatable random choices; it is not a password or real launch code.</li>
+    <li><strong>Keep Chaos Director off.</strong> It is normally off in the first Planner screenshot. Leave it off until you want random extra events.</li>
+    <li><strong>Read the brief.</strong> Check the one-line summary at the bottom of Planner. It should match the choices you made.</li>
+    <li><strong>Click LAUNCH MISSION.</strong> Wait for the visible 3-2-1 countdown. The app configures and starts the mission when the countdown ends.</li>
+    <li><strong>Observe the Dashboard.</strong> Click Dashboard on the left. Read the resource cards and mission progress. The simulation may already be ticking; use the top LAUNCH button to pause before taking time to inspect.</li>
+    <li><strong>Explore without changing anything.</strong> Click Cutaway, Orbit, Systems, Crew, Replay, Console, Reports, and Settings in the left rail. Return to Dashboard to see the same mission.</li>
+    <li><strong>Practice one response.</strong> On a later run, choose Fuel Leak. When an advisor card appears, read its explanation and risk label, click PREVIEW first, then decide whether to EXECUTE or DISMISS.</li>
+    <li><strong>Pause or continue.</strong> The top LAUNCH button toggles the live mission between running and paused. Space does the same.</li>
+    <li><strong>Review and save.</strong> Click Reports, read the current outcome and grade, then click EXPORT HTML or EXPORT CSV. You can also use HTML/CSV in the top bar.</li>
   </ol>
   <h3>Destinations</h3>
   <table>
@@ -140,9 +193,25 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
   <p>EASY reduces fault pressure and allows a larger response window. NORMAL is the standard setting. HARD raises pressure and shortens the time available for a response. These affect the simulation, not your computer's performance.</p>
 </section>
 
-<section class="page">
+<section class="page" id="screens">
   <h2>3. Every screen</h2>
   <p>The navigation rail contains ten views. All display the same live mission unless the Replay view has moved to an earlier recorded tick.</p>
+  <h3>First, understand the window around each screen</h3>
+  <p>The ten screenshots in this guide show the large center area only. The running desktop app also has a top control bar, left navigation rail, and footer.</p>
+  <table>
+    <tr><th>Window area</th><th>What it does</th><th>What to click / type</th></tr>
+    <tr><td><strong>Top bar: LAUNCH</strong></td><td>Starts a stopped mission or pauses a running one. If the mission has ended, it resets before starting again.</td><td>Click to run/pause. The exact status appears in the footer.</td></tr>
+    <tr><td><strong>Top bar: AUTONOMY</strong></td><td>Cycles response authority in order: Manual, Timed Autopilot, Full Auto.</td><td>Click once per change. Read the new mode in the footer/status or mission state.</td></tr>
+    <tr><td><strong>Top bar: SELF-HEAL</strong></td><td>Enables or disables automatic approved safe repairs.</td><td>Click to toggle. This is separate from the Autonomy mode.</td></tr>
+    <tr><td><strong>Top bar: THEME</strong></td><td>Cycles the four color themes and rebuilds the shell in that theme.</td><td>Click repeatedly to return to the theme you want.</td></tr>
+    <tr><td><strong>Top bar: HTML / CSV</strong></td><td>Saves the current mission report or telemetry spreadsheet.</td><td>Click HTML or CSV. Files are written to <code>out\mission-report.html</code> and <code>out\telemetry.csv</code>.</td></tr>
+    <tr><td><strong>Top bar: N T/S</strong></td><td>Sets simulation speed in ticks per second.</td><td>Click to increase by 1; after 20 it cycles back to 1.</td></tr>
+    <tr><td><strong>Left navigation rail</strong></td><td>Switches the center area to one of the ten named views.</td><td>Click the view name. This is the easiest way to navigate when learning.</td></tr>
+    <tr><td><strong>Footer event ticker</strong></td><td>Displays the latest mission event and severity.</td><td>Click to open recent events; choose All severities or a severity filter, then an event to show it.</td></tr>
+    <tr><td><strong>Footer command field + SEND</strong></td><td>Sends a typed CLI command to the same mission used by the GUI.</td><td>Type a command such as <code>help</code> or <code>status</code>, then press Enter or click SEND.</td></tr>
+    <tr><td><strong>Footer status / REPLAY badge</strong></td><td>Reports command results and mission status. REPLAY indicates history is selected.</td><td>Display only; use the Replay view's controls to return to live history.</td></tr>
+  </table>
+  <p class="small"><strong>Keyboard note:</strong> the small numbers printed beside navigation buttons are 1=Planner, 2=Dashboard, …, 9=Reports, 0=Settings. Keyboard shortcuts use a different mapping: 0=Planner, 1=Dashboard, …, 9=Settings. Click the view name if you are unsure.</p>
   <table>
     <tr><th>View</th><th>What it is for</th><th>What you can do or learn</th></tr>
     <tr><td><strong>Planner</strong></td><td>Set up a new mission.</td><td>Choose destination, craft, difficulty, scenario, deterministic seed, and chaos setting; launch after the countdown.</td></tr>
@@ -158,16 +227,6 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
   </table>
   <p class="small"><strong>Settings note:</strong> theme, sound alerts, screen effects, and the FPS counter affect the running app. Animation quality, UI scale, and sound volume are saved, but are not currently applied to rendering or audio.</p>
   <p class="note"><strong>Illustrated walkthrough:</strong> the next ten pages show a verified screenshot of every application view and explain the controls and tasks available on each screen. Screenshots use the Dark Mission theme.</p>
-  <h3>Top bar and footer</h3>
-  <ul>
-    <li><strong>LAUNCH:</strong> start or pause mission ticking.</li>
-    <li><strong>AUTONOMY:</strong> cycle through Manual, Timed Autopilot, and Full Auto.</li>
-    <li><strong>SELF-HEAL:</strong> turn automatic safe repairs on or off.</li>
-    <li><strong>THEME:</strong> cycle the color theme.</li>
-    <li><strong>HTML / CSV:</strong> export reports to the <code>out</code> folder.</li>
-    <li><strong>Speed:</strong> cycle the simulation tick rate.</li>
-    <li><strong>Footer command box:</strong> send a command without leaving the current view.</li>
-  </ul>
   <div class="note"><strong>Color hints:</strong> green usually means nominal, amber indicates warning, red indicates critical, blue can indicate safe mode, and gray can indicate a failed item. Read the text labels as well as color.</div>
 </section>
 
@@ -179,10 +238,15 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
     <figcaption>Planner — choose the mission destination, spacecraft, difficulty, scenario, seed, and chaos setting, then launch.</figcaption>
   </figure>
   <ul>
-    <li>Select a destination and spacecraft, then choose EASY, NORMAL, or HARD and one of the built-in scenarios.</li>
-    <li>Keep or enter a deterministic seed to make a run repeatable; use Roll Dice for a new seed.</li>
-    <li>Enable Chaos Director for additional randomized events. Review the summary, then select Launch Mission to start the countdown.</li>
-    <li>Starting a new setup resets the current mission state; export anything you want to keep first.</li>
+    <li><strong>DESTINATION:</strong> open the list and choose Moon, Mars Transfer, or Asteroid Belt. This changes trip length and the modeled environment.</li>
+    <li><strong>SPACECRAFT:</strong> select Explorer, Freighter, or Crew Capsule. The craft choices trade fuel, oxygen, life support, speed, and crew capacity.</li>
+    <li><strong>DIFFICULTY:</strong> select EASY for a forgiving learning run, NORMAL for standard conditions, or HARD for more pressure and less response time.</li>
+    <li><strong>SCRIPTED SCENARIO:</strong> choose Free Flight for no scripted fault, or a scenario such as Fuel Leak to practice responding to an event.</li>
+    <li><strong>DETERMINISTIC SEED:</strong> keep <code>42</code> to make the run reproducible, or type another whole number. <strong>ROLL DICE</strong> fills in a random seed for you.</li>
+    <li><strong>CHAOS DIRECTOR:</strong> click the toggle to show ON/OFF. When enabled it can add randomized events on top of the selected scenario.</li>
+    <li><strong>Brief:</strong> read the summary line before launch. It updates as you change the selectors; hover for the destination profile and difficulty guidance.</li>
+    <li><strong>LAUNCH MISSION:</strong> click once. A non-integer seed is rejected with a red message. A valid seed starts a 3-2-1 countdown; the app then configures and starts the mission.</li>
+    <li>Launching a new plan resets the current mission. Export a report first if you need to keep its results.</li>
   </ul>
 </section>
 
@@ -194,9 +258,15 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
     <figcaption>Dashboard — the example shows fuel, battery, oxygen, temperature, cabin pressure, radiation, throttle, operating limits, and a fuel-margin recommendation.</figcaption>
   </figure>
   <ul>
-    <li>Drag the throttle slider to request a throttle percentage; current operating limits are displayed below.</li>
-    <li>Read the advisor's reason and cost before choosing Preview, Execute, or Dismiss. Preview explores a possible response; Execute applies the available action.</li>
-    <li>Use resource gauges and the progress panel to monitor fuel, battery, oxygen, mission completion, and caution status.</li>
+    <li><strong>Gauge cards:</strong> fuel, battery, oxygen, temperature, cabin pressure, and radiation are read-only meters. A status or estimate next to a meter is informational; it is not a button.</li>
+    <li><strong>THR slider:</strong> drag its handle up or down to request more or less throttle. The operating limits shown along the bottom constrain the request.</li>
+    <li><strong>Limit tiles:</strong> click a tile such as MAX THROTTLE or MIN BATTERY to change its limit. Repeated clicks step the limit; going past its design value is an intentional override and can make the simulated mission unsafe.</li>
+    <li><strong>Advisor card:</strong> read the title, explanation, risk/cost label, and response window before acting.</li>
+    <li><strong>PREVIEW:</strong> calculate a short what-if for that recommendation. Read the resulting message for estimated fuel, outcome, critical timing, and side effects; the preview is not the same as executing the action.</li>
+    <li><strong>EXECUTE:</strong> ask the controller to perform that recommendation on the live simulated craft.</li>
+    <li><strong>DISMISS:</strong> remove that recommendation from your active list without carrying out its action.</li>
+    <li><strong>Master-caution area:</strong> click the caution summary to expand its details; click it again (or click the open panel) to collapse. Individual warning tiles are indicators, not buttons.</li>
+    <li><strong>Mission progress panel and status:</strong> read-only view of estimated progress, remaining mission information, and caution. Use LAUNCH in the window's top bar to pause or continue.</li>
   </ul>
 </section>
 
@@ -208,9 +278,10 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
     <figcaption>Cutaway — the model is paired with subsystem status indicators so a fault can be related to a spacecraft component.</figcaption>
   </figure>
   <ul>
-    <li>Drag on the model to rotate it and scroll to zoom in or out.</li>
-    <li>Use Auto-Rotate to start or stop the model's automatic rotation.</li>
-    <li>Read the status list to compare Navigation, Propulsion, Computer, Life Support, Attitude, Thermal, Communication, and Power.</li>
+    <li><strong>Spacecraft model:</strong> click a visible component to highlight its subsystem; click-drag to rotate the camera; use the mouse wheel to zoom.</li>
+    <li><strong>AUTO-ROTATE: ON/OFF:</strong> click the control at the lower right to start or stop automatic rotation.</li>
+    <li><strong>Subsystem health list:</strong> read the color and status for Navigation, Propulsion, Computer, Life Support, Attitude, Thermal, Communication, and Power. The list is a legend, not a row of selection buttons.</li>
+    <li><strong>Selected label:</strong> shows the component chosen on the model. This screen is mainly for visual inspection; it does not repair a fault.</li>
   </ul>
 </section>
 
@@ -222,9 +293,11 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
     <figcaption>Orbit — inspect the planned, actual, and predicted course, destination, distance remaining, estimated time, and communications signal.</figcaption>
   </figure>
   <ul>
-    <li>Drag the plot to pan around the route; scroll to zoom.</li>
-    <li>Check distance and ETA alongside the uplink delay and signal information.</li>
-    <li>When a debris threat is active, use the orbit information with the advisor recommendation to understand the suggested maneuver and its fuel cost.</li>
+    <li><strong>Route display:</strong> compare the planned path, the recorded actual trail, and the predicted path. Earth, the vehicle, and destination are markers, not buttons.</li>
+    <li><strong>Pan and zoom:</strong> click-drag to move the plot; scroll the mouse wheel to zoom in/out.</li>
+    <li><strong>Distance / ETA:</strong> read the remaining distance and estimated ticks; these are status values, not clickable controls.</li>
+    <li><strong>Uplink / signal:</strong> monitor delay and communications. Change uplink delay from the Console command or applicable shell controls, not by clicking the Orbit labels.</li>
+    <li><strong>Threats:</strong> use any threat marker as information. Respond through the Dashboard advisor; evasive actions may cost fuel.</li>
   </ul>
 </section>
 
@@ -236,9 +309,10 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
     <figcaption>Systems — select a subsystem to inspect its status, active faults, sensor trend, and dependency relationships.</figcaption>
   </figure>
   <ul>
-    <li>Select Navigation, Propulsion, Computer, Life Support, Attitude, Thermal, Communication, or Power from the list.</li>
-    <li>Review the selected subsystem's telemetry, active fault labels, sensor history, and dependency graph.</li>
-    <li>Use the graph to understand how trouble in one component may affect connected systems.</li>
+    <li><strong>Subsystem list:</strong> click Navigation, Propulsion, Computer, Life Support, Attitude, Thermal, Communication, or Power. The selected row is highlighted.</li>
+    <li><strong>Telemetry details:</strong> read health, active fault names, sensor ID/value/unit, and the sensor-history sparkline. They update with the mission; they are not editable fields.</li>
+    <li><strong>Dependencies / cascade flow:</strong> read the linked subsystem names. A warning-colored moving marker means a dependency effect is propagating; the graph is informational, not a button.</li>
+    <li>To change the mission or fix a problem, use the Planner, Dashboard recommendations, Crew tasks, or Console commands; the Systems view is a diagnostic display.</li>
   </ul>
 </section>
 
@@ -250,9 +324,12 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
     <figcaption>Crew — each card shows role, health, stress, radiation dose, current task, and available assignments.</figcaption>
   </figure>
   <ul>
-    <li>Review each crew member's health, stress, radiation dose, role, and current task.</li>
-    <li>Assign EVA Repair, Medical Care, Manual Reboot, or Rest when available and appropriate.</li>
-    <li>Assignments consume time and may have mission consequences; check the current status before choosing.</li>
+    <li><strong>Each crew card:</strong> read the person's role and skill, health, stress, radiation dose, and task/readiness. The circular indicator shows task progress; the meters do not accept clicks.</li>
+    <li><strong>EVA REPAIR:</strong> assign exterior repair work when a suitable repair is needed and conditions permit it.</li>
+    <li><strong>MEDICAL CARE:</strong> assign a medical task to help an injured or unwell crew member.</li>
+    <li><strong>MANUAL REBOOT:</strong> assign crew work to restart a computer when appropriate.</li>
+    <li><strong>REST:</strong> give the crew member a rest task rather than a repair.</li>
+    <li>Click the task button inside the chosen person's card. Tasks are only accepted when the person is alive and not already busy; the message at the bottom reports assignment or rejection. A running task takes ticks to finish.</li>
   </ul>
 </section>
 
@@ -264,9 +341,12 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
     <figcaption>Replay — review recorded timeline markers, telemetry curves, and action totals.</figcaption>
   </figure>
   <ul>
-    <li>Drag the timeline marker to inspect an earlier recorded tick; event markers identify notable moments.</li>
-    <li>Use Step Back, Play, and Step Forward to examine the history; select Resume Live when finished.</li>
-    <li>Live ticking pauses while you review replay, so return to the live state before continuing the mission.</li>
+    <li><strong>Timeline:</strong> click or drag the marker to jump to a recorded tick. Colored event dots show where events occurred; the dots are markers, not separate buttons.</li>
+    <li><strong>STEP BACK:</strong> move to the previous recorded snapshot.</li>
+    <li><strong>PLAY / PAUSE:</strong> start or stop playback through the recorded snapshots. Starting at the end begins review from the start.</li>
+    <li><strong>STEP FORWARD:</strong> move to the next recorded snapshot.</li>
+    <li><strong>RESUME LIVE:</strong> leave replay and return to the current live mission. Use this before expecting normal mission progression to continue.</li>
+    <li><strong>Telemetry graph / action tally:</strong> compare recorded progress and fuel and see who acted (human, autopilot, self-heal, or crew). These are display-only.</li>
   </ul>
 </section>
 
@@ -278,9 +358,14 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
     <figcaption>Console — enter a command in the bottom field and read the simulator's response in the terminal area.</figcaption>
   </figure>
   <ul>
-    <li>Start with <code>help</code> and <code>status</code>. Use commands such as <code>tick 5</code>, <code>scenario 1</code>, <code>inject fuel-leak</code>, and <code>throttle 60</code>.</li>
-    <li>Set response modes with <code>autonomy manual</code>, <code>autonomy timed</code>, or <code>autonomy full</code>; control safe repairs with <code>heal on</code> or <code>heal off</code>.</li>
-    <li>Use <code>preview</code>, <code>exec</code>, and <code>dismiss</code> with a recommendation ID to review or respond to advice. Up/Down recalls command history; Tab completes commands.</li>
+    <li><strong>Output panel:</strong> read the welcome/help text and the results of commands. It is read-only; you cannot type into it.</li>
+    <li><strong>Command field:</strong> click the input field at the bottom, type one command, and press Enter. Invalid commands display an error and the console remains available.</li>
+    <li><strong>HELP / STATUS:</strong> type <code>help</code> to list accepted command forms and <code>status</code> to see the current mission summary.</li>
+    <li><strong>Mission controls:</strong> use commands such as <code>tick 5</code> (advance five steps), <code>throttle 60</code>, <code>scenario 1</code>, or <code>inject fuel-leak</code>.</li>
+    <li><strong>Autonomy:</strong> use <code>autonomy manual</code>, <code>autonomy timed</code>, or <code>autonomy full</code>. Toggle approved safe repairs with <code>heal on</code> / <code>heal off</code>.</li>
+    <li><strong>Advice:</strong> type <code>preview &lt;recommendation-id&gt;</code> before <code>exec &lt;recommendation-id&gt;</code>; use <code>dismiss &lt;recommendation-id&gt;</code> to reject advice. Recommendation IDs are shown by the app/help/status rather than guessed.</li>
+    <li><strong>Command history and completion:</strong> Up/Down recalls a command typed in this Console view. Tab completes a known command prefix; if several match, the possible names are printed.</li>
+    <li>There is no separate Run button in this screen: Enter submits the command. The surrounding window also has its own footer command field and SEND button.</li>
   </ul>
 </section>
 
@@ -292,9 +377,11 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
     <figcaption>Reports — inspect the live or completed mission summary, score, action counts, event history, and achievements.</figcaption>
   </figure>
   <ul>
-    <li>Read the HTML preview and mission grade; a mission still in progress receives a provisional summary.</li>
-    <li>Select Export HTML or Export CSV to save a report or telemetry data in the project's <code>out</code> folder.</li>
-    <li>Use Refresh to update the report after additional mission activity.</li>
+    <li><strong>HTML REPORT PREVIEW:</strong> read the generated report in the scrollable preview pane. It is not an editor.</li>
+    <li><strong>MISSION GRADE:</strong> read the current outcome, score, grade description, tick/progress, action totals, and achievements. An in-progress mission is not a final result.</li>
+    <li><strong>EXPORT HTML:</strong> save <code>out\mission-report.html</code>.</li>
+    <li><strong>EXPORT CSV:</strong> save telemetry to <code>out\telemetry.csv</code>, for example to open in spreadsheet software.</li>
+    <li><strong>REFRESH:</strong> regenerate the preview after mission activity. The view also refreshes as it receives new snapshots.</li>
   </ul>
 </section>
 
@@ -306,13 +393,16 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
     <figcaption>Settings — choose a theme and adjust available presentation and audio preferences.</figcaption>
   </figure>
   <ul>
-    <li>Change the color theme; toggle Sound alerts, Screen effects, and the FPS counter.</li>
-    <li>Animation quality, UI scale, and Sound volume can be selected and saved, but this build does not yet apply those three preferences to rendering or audio.</li>
-    <li>The FPS counter updates in the Render Performance row when enabled.</li>
+    <li><strong>Color Theme:</strong> select the theme from the list. THEME in the top bar also cycles themes.</li>
+    <li><strong>Sound alerts:</strong> toggle synthesized click sounds and event alerts on/off.</li>
+    <li><strong>Screen effects:</strong> toggle optional mission visual effects on/off.</li>
+    <li><strong>Show FPS counter:</strong> toggle the frames-per-second reading in Render Performance. It is a display, not a performance-control slider.</li>
+    <li><strong>Animation quality, UI scale, Sound volume:</strong> the selection controls save a preference, but this build does not yet apply these three choices to rendering or audio.</li>
+    <li>There is no Apply button; selections are saved as you make them and persist after restarting the app.</li>
   </ul>
 </section>
 
-<section class="page">
+<section class="page" id="faults">
   <h2>4. Faults, advice, and autonomy</h2>
   <p>The simulator demonstrates 15 kinds of equipment or sensor problem. A problem can change readings, reduce mission performance, and create one or more recommendations. Some problems are introduced by a scenario; you can also inject faults from the command line.</p>
   <table>
@@ -342,7 +432,7 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
   <div class="warning"><strong>Watch for costly actions.</strong> Evasive maneuvers and course corrections consume fuel; sealing a breach uses sealant. Preview recommendations when you are unsure, and check remaining resources before executing.</div>
 </section>
 
-<section class="page">
+<section class="page" id="scenarios">
   <h2>5. The 12 built-in scenarios</h2>
   <p>Scenario numbers are zero-based in the CLI; the Planner shows their names. Scheduled events occur after the mission has advanced to the listed approximate tick.</p>
   <table>
@@ -370,7 +460,7 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
   </ol>
 </section>
 
-<section class="page">
+<section class="page" id="cli">
   <h2>6. Using the command line</h2>
   <p>Start the CLI in PowerShell with <code>.\run.bat --cli</code>. It prints a help line. Type one command per line and press Enter. Type <code>quit</code> to leave. Commands are examples, not real spacecraft instructions.</p>
   <h3>Beginner sequence</h3>
@@ -378,14 +468,13 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
 status
 scenario 1
 uplink off
-inject fuel-leak
 tick 4
 status
 preview reduce-throttle 10
 exec reduce-throttle
 report
 quit</pre>
-  <p><code>scenario 1</code> configures the Fuel Leak scenario. You can instead use <code>inject fuel-leak</code> to add the fault directly. <code>tick 4</code> advances four steps. The Preview command describes a possible future without advancing the live mission. Execute only after the recommendation exists.</p>
+  <p><code>scenario 1</code> configures the Fuel Leak scenario; use <code>inject fuel-leak</code> instead when you want to add the fault directly to the current scenario. Do not use both in the same practice run. <code>tick 4</code> advances four steps. The Preview command describes a possible future without advancing the live mission. Execute only after the recommendation exists.</p>
   <h3>Command reference</h3>
   <table>
     <tr><th>Command</th><th>Purpose / example</th></tr>
@@ -414,14 +503,16 @@ quit</pre>
   <h3>Keyboard shortcuts in the GUI</h3>
   <table>
     <tr><th>Shortcut</th><th>Action</th></tr>
-    <tr><td>0–9</td><td>Switch views in navigation-rail order.</td></tr>
+    <tr><td>0</td><td>Open Planner.</td></tr>
+    <tr><td>1–8</td><td>Open Dashboard, Cutaway, Orbit, Systems, Crew, Replay, Console, or Reports, respectively.</td></tr>
+    <tr><td>9</td><td>Open Settings.</td></tr>
     <tr><td>Space</td><td>Start or pause mission ticking.</td></tr>
     <tr><td>Ctrl+K</td><td>Open Console and focus the command field.</td></tr>
     <tr><td>Ctrl+S</td><td>Capture all GUI screenshots into <code>out\screenshots</code>.</td></tr>
-    <tr><td>9</td><td>Open Settings (the tenth view in the navigation order).</td></tr>
     <tr><td>F11</td><td>Toggle full-screen mode.</td></tr>
     <tr><td>Escape</td><td>Clear the command field.</td></tr>
   </table>
+  <p class="small">The little numbers printed beside the left-rail names use a different mapping: Planner shows 1, Dashboard 2, …, Reports 9, and Settings 0. For the keyboard, use the mapping above; clicking a name avoids the mismatch.</p>
   <h3>Where files go</h3>
   <ul>
     <li><code>out\mission-report.html</code> — report exported from the application.</li>
@@ -446,7 +537,7 @@ quit</pre>
   <div class="tip"><strong>Resetting:</strong> use Planner to configure a fresh mission, or choose a scenario again from the CLI. This resets mission state. Reports and logs under <code>out</code> are generated files; keep or copy anything you want before replacing it.</div>
 </section>
 
-<section class="page">
+<section class="page" id="oop-feature">
   <h2>8. How OOP powers a real OrbitalX feature</h2>
   <p>Follow one actual user-facing feature: the Dashboard displays a fuel recommendation, the operator previews or executes it, and OrbitalX reduces the spacecraft's throttle. These steps happen because specific objects collaborate—not because the program merely defines classes with OOP-sounding names.</p>
   <figure class="figure">
@@ -469,9 +560,19 @@ quit</pre>
     <li><strong>All views get updated data.</strong> The engine publishes a new <code>SimulationSnapshot</code>. Views update their snapshot and repaint, so Dashboard, Systems, and Reports can show the same current mission.</li>
   </ol>
   <p class="small">Follow these methods in <code>simulation/SimulationEngine.java</code>, <code>advisor/FuelLowRule.java</code>, <code>action/ReduceThrottleAction.java</code>, <code>gui/MissionView.java</code>, and <code>simulation/DefaultSimulationController.java</code>.</p>
+  <h3>A short, practical OOP presentation</h3>
+  <ol>
+    <li><strong>Show the running feature.</strong> Start a Fuel Leak mission and open Dashboard. Point to a recommendation and explain that PREVIEW estimates a possible response while EXECUTE changes the simulated craft.</li>
+    <li><strong>Show the boundary.</strong> In <code>MissionView.java</code>, find the handler for the dashboard's action buttons. Explain that the view asks the <code>SimulationController</code> to preview or execute; it does not change the fuel or throttle fields itself.</li>
+    <li><strong>Show the rule and action.</strong> Open <code>FuelLowRule.java</code> and <code>ReduceThrottleAction.java</code>. The rule decides when the recommendation applies; the action contains the concrete throttle change.</li>
+    <li><strong>Show the model and guard.</strong> Open <code>Spacecraft.java</code> and the resource/limit code. State is owned by model objects and changes go through methods that enforce limits.</li>
+    <li><strong>Name the OOP ideas with evidence.</strong> Interface-based abstraction: <code>SimulationController</code>. Polymorphism: the engine calls rule/action implementations through shared types. Composition: the spacecraft contains resources, subsystems, and crew. Encapsulation: the view uses snapshots and controller methods rather than editing private model state.</li>
+    <li><strong>Show the result.</strong> Return to Dashboard or Systems and point out that the view refreshes from the updated snapshot. The same mission state is also available to reports.</li>
+  </ol>
+  <p>This demonstration answers “where is OOP used?” with one end-to-end feature. It is not necessary to memorize definitions: explain what each named object does and why the objects cooperate.</p>
 </section>
 
-<section class="page">
+<section class="page" id="oop-map">
   <h2>OOP concepts, mapped to implemented features</h2>
   <p>This table identifies where each concept is actually used and what job it performs in OrbitalX.</p>
   <table>
@@ -503,7 +604,7 @@ return success("Throttle reduced to " + permitted + "%");</pre>
   <p><code>View</code> owns the shared controller, theme, current snapshot, and tick-listener behavior. <code>MissionView</code> supplies the shared mission-control canvas. <code>SystemsView</code> and <code>DashboardView</code> specialize it with different drawing and interactions. The reusable part is the live-view lifecycle; the specialized part is each screen's job.</p>
 </section>
 
-<section class="page">
+<section class="page" id="oop-autonomy">
   <h2>OOP also drives autonomy and reporting</h2>
   <p>The other major features use the same object-collaboration approach. These are not theoretical examples: they are the classes the mission engine uses.</p>
   <table>
@@ -526,7 +627,7 @@ return success("Throttle reduced to " + permitted + "%");</pre>
   <p class="small">The companion <code>docs\OOP_CONCEPT_MAP.md</code> and class diagrams in <code>docs\puml\</code> provide more implementation references. OrbitalX uses explicit switches for some finite choices; the design uses polymorphism where interchangeable behavior is useful.</p>
 </section>
 
-<section class="page">
+<section class="page" id="oop-systems">
   <h2>OOP example: from subsystem objects to the Systems screen</h2>
   <p>This is a second concrete example of OOP in the project: the Systems screen is assembled from the live snapshot that the engine publishes. The screen does not reach into or mutate the engine's private model.</p>
   <figure class="figure">
