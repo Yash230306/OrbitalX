@@ -10,6 +10,16 @@ import java.awt.Font;
 
 public final class ToastLayer extends JLayeredPane {
     public ToastLayer() { setOpaque(false); }
+
+    @Override public boolean contains(int x, int y) {
+        // Only claim hit if a visible toast actually contains this point
+        for (java.awt.Component comp : getComponents()) {
+            if (comp.isVisible() && comp.getBounds().contains(x, y)) {
+                return true;
+            }
+        }
+        return false;
+    }
     public void showToast(String message, Color color, int durationMillis) {
         if (durationMillis <= 0) throw new IllegalArgumentException("Toast duration must be positive");
         JLabel toast = new JLabel(message);

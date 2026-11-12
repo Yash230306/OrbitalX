@@ -49,6 +49,9 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
     private final LinkedHashMap<String, CorrectiveAction> modelActions = new LinkedHashMap<>();
     private final LinkedHashMap<String, Recommendation> modelAdviceByLegacyId = new LinkedHashMap<>();
     private final Set<String> activeAnomalyIds = new HashSet<>();
+    /** Maps recommendation IDs to the tick after which they may reappear (cooldown after execute/dismiss/self-heal). */
+    private final Map<String, Integer> suppressedRecommendations = new LinkedHashMap<>();
+    private static final int RECOMMENDATION_COOLDOWN_TICKS = 10;
     private CommandChannel commandChannel;
     private final ArrayList<Vec2> trail = new ArrayList<>();
     private final ArrayList<CrewState> crew = new ArrayList<>();
@@ -130,7 +133,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
         radiators = true; coolant = true; solarReoriented = false; backupAntenna = false; backupScrubber = false;
         nonEssential = true; shielded = false; backupEngine = false; reserveConnected = false; ended = false;
         outcome = "IN PROGRESS"; overridden = false; previewCount = 0; debrisDodges = 0; criticalSeen = false;
-        faults.clear(); recommendations.clear(); modelActions.clear(); modelAdviceByLegacyId.clear(); activeAnomalyIds.clear();
+        faults.clear(); recommendations.clear(); modelActions.clear(); modelAdviceByLegacyId.clear(); activeAnomalyIds.clear(); suppressedRecommendations.clear();
         currentAnomalies = List.of(); currentAdvice = List.of();
         commandChannel = new DirectChannel(); events.clear(); history.clear(); trail.clear(); crew.clear();
         limits.clear();
@@ -279,15 +282,19 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
         if (overridden) recommend("restore-limits", "Unsafe limit override active", "Restore safe operating limits.", 70, ActionRisk.COSTLY);
 
         if (selfHealing && computerFreeze == 0 && computerError < 15) {
-            if (battery < limits.get(LimitType.MIN_BATTERY) + 10 || faults.containsKey(FaultType.SOLAR_FAILURE)) {
+            if ((battery < limits.get(LimitType.MIN_BATTERY) + 10 || faults.containsKey(FaultType.SOLAR_FAILURE))
+                    && (nonEssential || !solarReoriented)) {
                 nonEssential = false;
                 solarReoriented = true;
-                if (recommendations.remove("shed-load") != null)
+                if (recommendations.remove("shed-load") != null) {
+                    suppressRecommendation("shed-load");
                     emit(EventType.SELF_HEALING, Severity.INFO, "SELF-HEALING: essential power preserved and arrays reoriented");
+                }
             }
             if (faults.remove(FaultType.OVERHEAT) != null) {
                 radiators = true;
                 coolant = true;
+                suppressRecommendation("activate-radiators");
                 emit(EventType.SELF_HEALING, Severity.INFO, "SELF-HEALING: thermal system returned to control");
                 recommendations.remove("activate-radiators");
             }
@@ -295,24 +302,29 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
             boolean navigationFault = faults.remove(FaultType.NAV_DRIFT) != null;
             if (gyroFault || navigationFault) {
                 courseError = Math.min(courseError, 1);
+                suppressRecommendation("recalibrate-gyro");
                 emit(EventType.SELF_HEALING, Severity.INFO, "SELF-HEALING: guidance recalibrated");
                 recommendations.remove("recalibrate-gyro");
             }
             if (faults.remove(FaultType.COOLANT_FAILURE) != null) {
                 coolant = true; radiators = true;
+                suppressRecommendation("activate-radiators");
                 emit(EventType.SELF_HEALING, Severity.INFO, "SELF-HEALING: coolant pump restarted");
             }
             if (faults.remove(FaultType.COMPUTER_FAULT) != null) {
                 computerError = 0; computerFreeze = 0;
+                suppressRecommendation("reboot-computer");
                 emit(EventType.SELF_HEALING, Severity.INFO, "SELF-HEALING: onboard computer rebooted");
             }
             if (faults.remove(FaultType.DROPOUT) != null) {
                 backupAntenna = true;
+                suppressRecommendation("backup-antenna");
                 emit(EventType.SELF_HEALING, Severity.INFO, "SELF-HEALING: backup antenna engaged");
             }
             boolean spikeFault = faults.remove(FaultType.SPIKE) != null;
             boolean stuckFault = faults.remove(FaultType.STUCK_VALUE) != null;
             if (spikeFault || stuckFault) {
+                suppressRecommendation("backup-sensor");
                 emit(EventType.SELF_HEALING, Severity.INFO, "SELF-HEALING: redundant sensor channel selected");
                 recommendations.remove("backup-sensor");
             }
@@ -376,9 +388,15 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
     public synchronized List<Recommendation> currentAdvice() { return List.copyOf(currentAdvice); }
 
     private void recommend(String id, String title, String explanation, int priority, ActionRisk risk) {
+        if (suppressedRecommendations.getOrDefault(id, 0) > tick) return;  // still in cooldown
         recommendations.put(id, new RecommendationSnapshot(id, title, explanation, priority,
                 Math.max(1, (int) Math.ceil(config.difficulty().responseWindow() * 10)), "OPEN",
                 "HUMAN", risk, autonomy == AutonomyMode.MANUAL, true));
+    }
+
+    /** Suppresses a recommendation from reappearing for a cooldown window after it was acted on. */
+    private void suppressRecommendation(String id) {
+        suppressedRecommendations.put(id, tick + RECOMMENDATION_COOLDOWN_TICKS);
     }
 
     private void applyAutonomy() {
@@ -438,6 +456,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
             syncEngineFromModel();
             if (id.equals("evade-debris")) debrisImpact = -1;
             recommendations.remove(id);
+            suppressRecommendation(id);
             emit(actor.equals("HUMAN") ? EventType.ACTION_BY_HUMAN : EventType.ACTION_BY_AUTOPILOT,
                     Severity.INFO, actor + " executed " + id + ": " + result.message());
             return;
@@ -462,6 +481,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
         if (applied) {
             if (id.equals("evade-debris")) debrisDodges++;
             recommendations.remove(id);
+            suppressRecommendation(id);
             emit(actor.equals("HUMAN") ? EventType.ACTION_BY_HUMAN : EventType.ACTION_BY_AUTOPILOT,
                     Severity.INFO, actor + " executed " + id);
         }
@@ -579,7 +599,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
             case "limit" -> applyLimit(LimitType.valueOf(parts[1]), Double.parseDouble(parts[2]), Boolean.parseBoolean(parts[3]));
             case "autonomy" -> autonomy = AutonomyMode.valueOf(parts[1]);
             case "execute" -> applyAction(parts[1], "HUMAN");
-            case "dismiss" -> recommendations.remove(parts[1]);
+            case "dismiss" -> { recommendations.remove(parts[1]); suppressRecommendation(parts[1]); }
             case "crew" -> startCrewTask(parts[1], CrewTaskType.valueOf(parts[2]));
             default -> throw new IllegalArgumentException("Unknown queued uplink command: " + parts[0]);
         }
@@ -599,7 +619,10 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
     }
     public synchronized void dismissRecommendation(String id) {
         submitOrRun("dismiss:" + id, () -> {
-            if (recommendations.remove(id) != null) emit(EventType.ACTION_BY_HUMAN, Severity.LOW, "Dismissed recommendation " + id);
+            if (recommendations.remove(id) != null) {
+                suppressRecommendation(id);
+                emit(EventType.ACTION_BY_HUMAN, Severity.LOW, "Dismissed recommendation " + id);
+            }
         });
     }
     public synchronized void setThrottle(int value) {
@@ -985,6 +1008,7 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
         clone.recommendations.putAll(recommendations); clone.commandChannel = commandChannel.copy();
         clone.modelActions.putAll(modelActions);
         clone.modelAdviceByLegacyId.putAll(modelAdviceByLegacyId);
+        clone.suppressedRecommendations.putAll(suppressedRecommendations);
         clone.activeAnomalyIds.addAll(activeAnomalyIds);
         clone.trail.addAll(trail);
         clone.events.clear();

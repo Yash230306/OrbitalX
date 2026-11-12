@@ -19,7 +19,9 @@ public final class SelfHealingHandler extends ResponseHandler {
         }
         int attempts = failures.merge(context.recommendation().id(), 1, Integer::sum);
         if (attempts >= 2) return nextEscalated(context.withFailureCount(attempts).markEscalated());
-        return new ResponseDecision(true, "SELF_HEALING", result, false, false);
+        // Not yet escalated but this attempt failed — return an unsuccessful decision so the
+        // recommendation is not removed and the next tick gets another chance.
+        return new ResponseDecision(false, "SELF_HEALING", result, false, false);
     }
     private ResponseDecision nextEscalated(ResponseContext context) {
         return pass(context);
