@@ -16,21 +16,23 @@ import java.util.Set;
 /** Custom Java2D view canvas used by all mission-control panels. */
 public class MissionView extends View {
     private final String title;
-    private boolean adjustingThrottle;
-    private String previewMessage = "";
-    private boolean annunciatorExpanded;
+    protected boolean adjustingThrottle;
+    protected String previewMessage = "";
+    protected boolean annunciatorExpanded;
 
     public MissionView(String title, SimulationController controller, Theme theme) {
         super(controller, theme);
         this.title = title;
         addMouseListener(new MouseAdapter() {
             @Override public void mousePressed(MouseEvent event) {
-                adjustingThrottle = "Dashboard".equals(title) && inThrottleTrack(event.getX(), event.getY());
-                if (adjustingThrottle) updateThrottle(event.getY());
+                if (isDashboardInteractive()) {
+                    adjustingThrottle = inThrottleTrack(event.getX(), event.getY());
+                    if (adjustingThrottle) updateThrottle(event.getY());
+                }
             }
             @Override public void mouseReleased(MouseEvent event) { adjustingThrottle = false; }
             @Override public void mouseClicked(MouseEvent event) {
-                if ("Dashboard".equals(title)) handleDashboardClick(event.getX(), event.getY());
+                if (isDashboardInteractive()) handleDashboardClick(event.getX(), event.getY());
             }
         });
         addMouseMotionListener(new MouseAdapter() {
@@ -38,6 +40,10 @@ public class MissionView extends View {
                 if (adjustingThrottle) updateThrottle(event.getY());
             }
         });
+    }
+
+    protected boolean isDashboardInteractive() {
+        return "Dashboard".equals(title);
     }
 
     public String title() { return title; }
@@ -149,7 +155,7 @@ public class MissionView extends View {
         g.drawString(snapshot.spacecraftState() + (snapshot.autopilotOnline() ? "  / AUTOPILOT ONLINE" : "  / AUTOPILOT OFFLINE"), 30, h - 18);
     }
 
-    private DashboardLayout dashboardLayout(int width, int height) {
+    protected DashboardLayout dashboardLayout(int width, int height) {
         int pad = 24, gap = 16, top = 78, controlWidth = 66;
         int available = Math.max(360, width - 2 * pad - controlWidth - 2 * gap);
         int cardsWidth = Math.max(240, (available - gap) * 3 / 5);
@@ -163,7 +169,7 @@ public class MissionView extends View {
                 top + advisorHeight + gap, controlWidth);
     }
 
-    private List<DashboardGauge> dashboardGauges() {
+    protected List<DashboardGauge> dashboardGauges() {
         List<DashboardGauge> gauges = new java.util.ArrayList<>();
         snapshot.resources().stream().filter(resource -> !resource.name().equalsIgnoreCase("reserve fuel"))
                 .forEach(resource -> gauges.add(new DashboardGauge(resource.name(), resource.level(),
@@ -177,12 +183,12 @@ public class MissionView extends View {
         return List.copyOf(gauges);
     }
 
-    private double sensorValue(String subsystem, double fallback) {
+    protected double sensorValue(String subsystem, double fallback) {
         return snapshot.subsystems().stream().filter(item -> item.name().equalsIgnoreCase(subsystem))
                 .flatMap(item -> item.sensors().stream()).mapToDouble(SensorSnapshot::value).findFirst().orElse(fallback);
     }
 
-    private void drawThrottle(Graphics2D g, DashboardLayout layout) {
+    protected void drawThrottle(Graphics2D g, DashboardLayout layout) {
         int x = layout.pad() + 18, top = layout.top() + 48, bottom = getHeight() - 78;
         int trackHeight = Math.max(90, bottom - top);
         g.setColor(theme.grid()); g.fillRoundRect(x, top, 12, trackHeight, 12, 12);
@@ -198,7 +204,7 @@ public class MissionView extends View {
         small(g, "DRAG", layout.pad() - 1, bottom + 32);
     }
 
-    private void drawLimitControls(Graphics2D g, DashboardLayout layout, int height) {
+    protected void drawLimitControls(Graphics2D g, DashboardLayout layout, int height) {
         int y = height - 64, x = layout.cardsX(), buttonWidth = Math.max(80, (layout.cardsW() - 24) / 4);
         for (int i = 0; i < Math.min(4, snapshot.limits().size()); i++) {
             LimitSnapshot limit = snapshot.limits().get(i);
@@ -218,7 +224,7 @@ public class MissionView extends View {
         }
     }
 
-    private void drawAnnunciator(Graphics2D g, DashboardLayout layout, int height) {
+    protected void drawAnnunciator(Graphics2D g, DashboardLayout layout, int height) {
         int x = layout.pad(), y = height - 196, width = getWidth() - 2 * layout.pad(), panelHeight = 148;
         card(g, x, y, width, panelHeight);
         label(g, "MASTER CAUTION / ANNUNCIATOR   ·   CLICK TO CLOSE", x + 16, y + 22, theme.critical());
@@ -246,13 +252,13 @@ public class MissionView extends View {
         }
     }
 
-    private boolean inThrottleTrack(int x, int y) {
+    protected boolean inThrottleTrack(int x, int y) {
         DashboardLayout layout = dashboardLayout(getWidth(), getHeight());
         return x >= layout.pad() && x <= layout.pad() + layout.controlWidth()
                 && y >= layout.top() + 38 && y <= getHeight() - 68;
     }
 
-    private void updateThrottle(int y) {
+    protected void updateThrottle(int y) {
         int top = 78 + 48, bottom = getHeight() - 78;
         int trackHeight = Math.max(90, bottom - top);
         int maxThrottle = (int)Math.round(snapshot.limits().stream()
@@ -262,7 +268,7 @@ public class MissionView extends View {
         controller.setThrottle(percent);
     }
 
-    private void handleDashboardClick(int x, int y) {
+    protected void handleDashboardClick(int x, int y) {
         DashboardLayout layout = dashboardLayout(getWidth(), getHeight());
         if (annunciatorExpanded && y >= getHeight() - 196 && y <= getHeight() - 48) {
             annunciatorExpanded = false;
@@ -305,7 +311,7 @@ public class MissionView extends View {
         repaint();
     }
 
-    private void toggleLimit(LimitSnapshot limit) {
+    protected void toggleLimit(LimitSnapshot limit) {
         double defaultValue = switch (limit.type()) {
             case MAX_THROTTLE -> 80;
             case MAX_TEMPERATURE -> 85;
@@ -327,10 +333,10 @@ public class MissionView extends View {
         return shortened + "...";
     }
 
-    private record DashboardLayout(int pad, int gap, int top, int cardsX, int cardsW, int sideW, int sideX, int rowsY,
+    public record DashboardLayout(int pad, int gap, int top, int cardsX, int cardsW, int sideW, int sideX, int rowsY,
                                    int advisorHeight, int rowHeight, int visibleRecommendations, int gaugeH,
                                    int plotY, int controlWidth) {}
-    private record DashboardGauge(String name, double value, double maximum, String unit, int ticksToEmpty) {}
+    public record DashboardGauge(String name, double value, double maximum, String unit, int ticksToEmpty) {}
 
     private void drawPlanner(Graphics2D g, int w, int h) {
         int x = 28, y = 90, cardW = (w - 80) / 3;
@@ -545,7 +551,7 @@ public class MissionView extends View {
         g.setStroke(new BasicStroke(2)); g.draw(path);
     }
 
-    private void drawGauge(Graphics2D g, int cx, int cy, int radius, String label, double value, double max, Color color) {
+    protected void drawGauge(Graphics2D g, int cx, int cy, int radius, String label, double value, double max, Color color) {
         int d = radius * 2;
         g.setStroke(new BasicStroke(7, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         g.setColor(theme.grid()); g.draw(new Arc2D.Double(cx - radius, cy - radius, d, d, 135, 270, Arc2D.OPEN));
@@ -561,7 +567,7 @@ public class MissionView extends View {
         small(g, number(value) + "%", x + width - 40, y);
     }
 
-    private void drawProgress(Graphics2D g, int x, int y, int width, int height, double percent) {
+    protected void drawProgress(Graphics2D g, int x, int y, int width, int height, double percent) {
         g.setColor(theme.grid()); g.fillRoundRect(x, y, width, height, height, height);
         g.setColor(theme.accent()); g.fillRoundRect(x, y, (int) (width * Math.max(0, Math.min(1, percent / 100))), height, height, height);
     }
@@ -584,5 +590,5 @@ public class MissionView extends View {
     protected void small(Graphics2D g, String text, int x, int y) {
         g.setColor(theme.muted()); g.setFont(new Font("Segoe UI", Font.PLAIN, 10)); g.drawString(text, x, y);
     }
-    private static String number(double value) { return String.format(Locale.ROOT, "%.1f", value); }
+    protected static String number(double value) { return String.format(Locale.ROOT, "%.1f", value); }
 }

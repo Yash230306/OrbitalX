@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 
 /** Custom-painted Swing mission-control shell; all simulation access crosses the public API. */
 public final class MainWindow extends JFrame {
@@ -267,21 +268,34 @@ public final class MainWindow extends JFrame {
         private TopBar() {
             setLayout(new BorderLayout());
             setBackground(theme.panel());
-            setBorder(new EmptyBorder(10, 18, 10, 18));
-            JLabel logo = new JLabel("ORBITALIX  /  MISSION CONTROL");
-            logo.setForeground(theme.foreground());
-            logo.setFont(new Font("Segoe UI", Font.BOLD, 16));
-            add(logo, BorderLayout.WEST);
+            setBorder(new EmptyBorder(8, 18, 8, 18));
+
+            JPanel brandPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+            brandPanel.setOpaque(false);
+
+            JLabel logo = new JLabel("ORBITALIX");
+            logo.setForeground(theme.accent());
+            logo.setFont(new Font("Segoe UI", Font.BOLD, 17));
+            brandPanel.add(logo);
+
+            JLabel subLogo = new JLabel("// MISSION CONTROL");
+            subLogo.setForeground(theme.foreground());
+            subLogo.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            brandPanel.add(subLogo);
+
+            add(brandPanel, BorderLayout.WEST);
+
             JPanel controls = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
             controls.setOpaque(false);
-            replayIndicator = new JLabel("REPLAY");
+            replayIndicator = new JLabel("● REPLAY ACTIVE");
             replayIndicator.setOpaque(true);
             replayIndicator.setForeground(theme.background());
             replayIndicator.setBackground(theme.warning());
             replayIndicator.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            replayIndicator.setBorder(new EmptyBorder(6, 9, 6, 9));
+            replayIndicator.setBorder(new EmptyBorder(5, 9, 5, 9));
             replayIndicator.setVisible(controller.snapshot().replaying());
             controls.add(replayIndicator);
+
             addButton(controls, "LAUNCH", MainWindow.this::toggleRun);
             addButton(controls, "AUTONOMY", MainWindow.this::toggleAutonomy);
             addButton(controls, "SELF-HEAL", MainWindow.this::toggleSelfHealing);
@@ -298,12 +312,34 @@ public final class MainWindow extends JFrame {
         }
 
         private void addButton(JPanel parent, String text, Runnable action) {
-            JButton button = new JButton(text);
+            JButton button = new JButton(text) {
+                @Override protected void paintComponent(Graphics graphics) {
+                    Graphics2D g = (Graphics2D) graphics.create();
+                    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    if (getModel().isArmed()) {
+                        g.setColor(theme.accent());
+                    } else if (getModel().isRollover()) {
+                        g.setColor(new Color(theme.panelRaised().getRed(), theme.panelRaised().getGreen(), theme.panelRaised().getBlue(), 240));
+                    } else {
+                        g.setColor(theme.panelRaised());
+                    }
+                    g.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                    g.setColor(getModel().isRollover() ? theme.accent() : theme.grid());
+                    g.setStroke(new BasicStroke(1));
+                    g.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+
+                    g.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                    FontMetrics fm = g.getFontMetrics();
+                    g.setColor(getModel().isArmed() ? theme.background() : theme.foreground());
+                    g.drawString(getText(), (getWidth() - fm.stringWidth(getText())) / 2, (getHeight() + fm.getAscent() - fm.getDescent()) / 2);
+                    g.dispose();
+                }
+            };
             button.setFocusPainted(false);
-            button.setForeground(theme.foreground());
-            button.setBackground(theme.panelRaised());
-            button.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(theme.grid()),
-                    new EmptyBorder(7, 11, 7, 11)));
+            button.setBorderPainted(false);
+            button.setContentAreaFilled(false);
+            button.setOpaque(false);
+            button.setPreferredSize(new Dimension(button.getPreferredSize().width + 16, 32));
             button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             button.addActionListener(event -> { playClick(); action.run(); });
             parent.add(button);
@@ -320,15 +356,38 @@ public final class MainWindow extends JFrame {
             setLayout(new GridLayout(VIEWS.size(), 1, 0, 4));
             setBackground(theme.panel());
             setBorder(new EmptyBorder(12, 8, 12, 8));
-            setPreferredSize(new Dimension(178, 0));
+            setPreferredSize(new Dimension(185, 0));
             for (int i = 0; i < VIEWS.size(); i++) {
                 final String view = VIEWS.get(i);
-                JButton button = new JButton((i + 1) % 10 + "   " + view);
-                button.setHorizontalAlignment(SwingConstants.LEFT);
+                final boolean isCurrent = view.equals(selectedView);
+                final int hotkey = (i + 1) % 10;
+                JButton button = new JButton() {
+                    @Override protected void paintComponent(Graphics graphics) {
+                        Graphics2D g = (Graphics2D) graphics.create();
+                        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        if (isCurrent) {
+                            g.setColor(theme.panelRaised());
+                            g.fillRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 8, 8);
+                            g.setColor(theme.accent());
+                            g.fillRoundRect(2, 4, 4, getHeight() - 8, 3, 3);
+                        } else if (getModel().isRollover()) {
+                            g.setColor(new Color(theme.grid().getRed(), theme.grid().getGreen(), theme.grid().getBlue(), 70));
+                            g.fillRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 8, 8);
+                        }
+                        g.setColor(isCurrent ? theme.accent() : theme.muted());
+                        g.setFont(new Font("Consolas", Font.BOLD, 10));
+                        g.drawString("[" + hotkey + "]", 12, getHeight() / 2 + 4);
+
+                        g.setColor(isCurrent ? theme.foreground() : theme.muted());
+                        g.setFont(new Font("Segoe UI", isCurrent ? Font.BOLD : Font.PLAIN, 12));
+                        g.drawString(view.toUpperCase(Locale.ROOT), 42, getHeight() / 2 + 4);
+                        g.dispose();
+                    }
+                };
                 button.setFocusPainted(false);
-                button.setForeground(view.equals(selectedView) ? theme.accent() : theme.muted());
-                button.setBackground(theme.panel());
-                button.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 4));
+                button.setBorderPainted(false);
+                button.setContentAreaFilled(false);
+                button.setOpaque(false);
                 button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
                 button.addActionListener(event -> { playClick(); showView(view); });
                 add(button);
@@ -345,26 +404,51 @@ public final class MainWindow extends JFrame {
         private Footer() {
             setLayout(new BorderLayout(0, 3));
             setBackground(theme.panel());
-            setBorder(new EmptyBorder(4, 8, 8, 8));
+            setBorder(new EmptyBorder(4, 10, 8, 10));
             status.setForeground(theme.nominal());
             status.setFont(new Font("Segoe UI", Font.BOLD, 11));
             bottomTicker = new BottomTicker(controller, theme);
             add(bottomTicker, BorderLayout.NORTH);
             JPanel controls = new JPanel(new BorderLayout(12, 0));
             controls.setOpaque(false);
-            controls.setBorder(new EmptyBorder(0, 6, 0, 6));
-            controls.add(status, BorderLayout.WEST);
+            controls.setBorder(new EmptyBorder(2, 6, 2, 6));
+
+            JPanel statusWrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
+            statusWrap.setOpaque(false);
+            statusWrap.add(status);
+            controls.add(statusWrap, BorderLayout.WEST);
+
             commandField.setPreferredSize(new Dimension(500, 34));
             commandField.setBackground(theme.background());
             commandField.setForeground(theme.foreground());
             commandField.setCaretColor(theme.accent());
+            commandField.setFont(new Font("Consolas", Font.PLAIN, 12));
             commandField.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(theme.grid()),
                     new EmptyBorder(4, 10, 4, 10)));
             commandField.setToolTipText("Enter onboard command (help for command list)");
             commandField.addActionListener(event -> runCommand());
             controls.add(commandField, BorderLayout.EAST);
-            JButton execute = new JButton("SEND");
-            execute.setForeground(theme.foreground()); execute.setBackground(theme.panelRaised());
+
+            JButton execute = new JButton("SEND") {
+                @Override protected void paintComponent(Graphics graphics) {
+                    Graphics2D g = (Graphics2D) graphics.create();
+                    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g.setColor(getModel().isRollover() ? theme.accent() : theme.panelRaised());
+                    g.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                    g.setColor(theme.grid());
+                    g.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+                    g.setColor(getModel().isRollover() && theme.displayName().equals("Projector Light") ? Color.WHITE : theme.foreground());
+                    g.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                    FontMetrics fm = g.getFontMetrics();
+                    g.drawString("SEND", (getWidth() - fm.stringWidth("SEND")) / 2, (getHeight() + fm.getAscent() - fm.getDescent()) / 2);
+                    g.dispose();
+                }
+            };
+            execute.setFocusPainted(false);
+            execute.setBorderPainted(false);
+            execute.setContentAreaFilled(false);
+            execute.setOpaque(false);
+            execute.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             execute.addActionListener(event -> { playClick(); runCommand(); });
             controls.add(execute, BorderLayout.CENTER);
             add(controls, BorderLayout.CENTER);
