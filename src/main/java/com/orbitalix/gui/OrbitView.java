@@ -7,6 +7,7 @@ import com.orbitalix.api.Vec2;
 import com.orbitalix.gui.theme.Theme;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.geom.Path2D;
 import java.awt.event.MouseAdapter;
@@ -77,13 +78,38 @@ public final class OrbitView extends MissionView {
         plot.setColor(snapshot.comms().blackout() ? theme.critical() : theme.nominal());
         plot.setStroke(new BasicStroke(1.5f));
         plot.drawLine(earthX, earthY, shipX, shipY);
-        plot.setColor(theme.nominal()); plot.fillOval(earthX - 7, earthY - 7, 14, 14);
-        plot.setColor(theme.accent()); plot.fillOval(shipX - 8, shipY - 6, 18, 12);
-        plot.setColor(theme.warning()); plot.fillOval(destinationX - 9, destinationY - 9, 18, 18);
-        plot.setColor(theme.muted()); plot.drawString("EARTH", Math.max(plotX + 4, earthX + 10), earthY + 24);
-        String destinationLabel = snapshot.config().destination().name().replace('_', ' ');
-        int destinationLabelX = Math.max(plotX + 4, destinationX - plot.getFontMetrics().stringWidth(destinationLabel) - 5);
-        plot.drawString(destinationLabel, destinationLabelX, destinationY + 25);
+        // Celestial Bodies & Waypoints with Aerospace HUD aura
+        int earthRadius = 9;
+        g.setColor(new Color(theme.nominal().getRed(), theme.nominal().getGreen(), theme.nominal().getBlue(), 40));
+        plot.fillOval(earthX - earthRadius - 4, earthY - earthRadius - 4, (earthRadius + 4) * 2, (earthRadius + 4) * 2);
+        plot.setColor(theme.nominal());
+        plot.fillOval(earthX - earthRadius, earthY - earthRadius, earthRadius * 2, earthRadius * 2);
+
+        // Destination with target reticle
+        int destRadius = 10;
+        plot.setColor(new Color(theme.warning().getRed(), theme.warning().getGreen(), theme.warning().getBlue(), 40));
+        plot.fillOval(destinationX - destRadius - 6, destinationY - destRadius - 6, (destRadius + 6) * 2, (destRadius + 6) * 2);
+        plot.setColor(theme.warning());
+        plot.fillOval(destinationX - destRadius, destinationY - destRadius, destRadius * 2, destRadius * 2);
+        plot.drawOval(destinationX - destRadius - 4, destinationY - destRadius - 4, (destRadius + 4) * 2, (destRadius + 4) * 2);
+
+        // Spacecraft icon with heading & attitude thrust vector
+        int shipW = 20, shipH = 14;
+        plot.setColor(new Color(theme.accent().getRed(), theme.accent().getGreen(), theme.accent().getBlue(), 60));
+        plot.fillOval(shipX - shipW / 2 - 3, shipY - shipH / 2 - 3, shipW + 6, shipH + 6);
+        plot.setColor(theme.accent());
+        plot.fillOval(shipX - shipW / 2, shipY - shipH / 2, shipW, shipH);
+        plot.setColor(theme.foreground());
+        plot.drawOval(shipX - shipW / 2, shipY - shipH / 2, shipW, shipH);
+        plot.drawLine(shipX, shipY - 5, shipX + 8, shipY);
+        plot.drawLine(shipX, shipY + 5, shipX + 8, shipY);
+
+        plot.setFont(new Font("Consolas", Font.BOLD, 10));
+        plot.setColor(theme.muted());
+        plot.drawString("TERRA [EARTH]", Math.max(plotX + 4, earthX + 14), earthY + 4);
+        String destinationLabel = snapshot.config().destination().name().replace('_', ' ') + " [TARGET]";
+        int destinationLabelX = Math.max(plotX + 4, destinationX - plot.getFontMetrics().stringWidth(destinationLabel) - 10);
+        plot.drawString(destinationLabel, destinationLabelX, destinationY + 4);
         for (ThreatSnapshot threat : snapshot.threats()) {
             int tx = mapX(threat.position(), orbit, plotX, plotWidth, span);
             int ty = mapY(threat.position(), plotY, plotHeight, verticalScale);

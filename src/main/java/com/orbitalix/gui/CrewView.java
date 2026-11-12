@@ -35,19 +35,44 @@ public final class CrewView extends MissionView {
             int x = margin + (i % columns) * (cardWidth + gap);
             int y = top + (i / columns) * (cardHeight + gap);
             card(g, x, y, cardWidth, cardHeight);
-            g.setColor(person.alive() ? theme.accent() : theme.critical());
+
+            // Crew avatar with status glow ring
+            Color healthColor = person.alive() ? (person.health() > 70 ? theme.nominal() : person.health() > 30 ? theme.warning() : theme.critical()) : theme.critical();
+            g.setColor(new Color(healthColor.getRed(), healthColor.getGreen(), healthColor.getBlue(), 35));
+            g.fillOval(x + 14, y + 14, 56, 56);
+            g.setColor(theme.panelRaised());
             g.fillOval(x + 18, y + 18, 48, 48);
-            g.setColor(theme.background()); g.setFont(new Font("Segoe UI", Font.BOLD, 20));
-            g.drawString(person.name().substring(0, 1), x + 36, y + 50);
-            label(g, person.name(), x + 80, y + 32, theme.foreground());
-            small(g, person.role().toUpperCase(Locale.ROOT) + "  /  SKILL: " + skillFor(person.role()), x + 80, y + 51);
-            drawMeter(g, x + 18, y + 82, cardWidth - 36, "HEALTH", person.health(), theme.nominal());
-            drawMeter(g, x + 18, y + 108, cardWidth - 36, "STRESS", person.stress(), theme.warning());
-            drawMeter(g, x + 18, y + 134, cardWidth - 36, "RADIATION DOSE", Math.min(100, person.radiationDose()), theme.critical());
-            small(g, "TASK  /  " + (person.taskTicksLeft() > 0 ? person.task() + "  ·  " + person.taskTicksLeft() + " TICKS" : "READY"),
-                    x + 18, y + 164);
+            g.setColor(healthColor);
+            g.setStroke(new BasicStroke(2));
+            g.drawOval(x + 18, y + 18, 48, 48);
+
+            g.setColor(theme.foreground()); g.setFont(new Font("Segoe UI", Font.BOLD, 20));
+            g.drawString(person.name().substring(0, 1), x + 34, y + 50);
+
+            g.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            g.setColor(theme.foreground());
+            g.drawString(person.name().toUpperCase(Locale.ROOT), x + 78, y + 34);
+
+            g.setFont(new Font("Consolas", Font.PLAIN, 10));
+            g.setColor(theme.accent());
+            g.drawString(person.role().toUpperCase(Locale.ROOT) + "  //  CLASS " + skillFor(person.role()), x + 78, y + 50);
+
+            drawMeter(g, x + 18, y + 80, cardWidth - 36, "VITALS / HEALTH", person.health(), healthColor);
+            drawMeter(g, x + 18, y + 106, cardWidth - 36, "PSYCH / STRESS", person.stress(), theme.warning());
+            drawMeter(g, x + 18, y + 132, cardWidth - 36, "RAD ACCUMULATION", Math.min(100, person.radiationDose()), theme.critical());
+
+            // Active task pill
+            boolean busy = person.taskTicksLeft() > 0;
+            g.setColor(busy ? new Color(theme.accent().getRed(), theme.accent().getGreen(), theme.accent().getBlue(), 30) : theme.panelRaised());
+            g.fillRoundRect(x + 18, y + 158, cardWidth - 80, 22, 6, 6);
+            g.setColor(busy ? theme.accent() : theme.grid());
+            g.drawRoundRect(x + 18, y + 158, cardWidth - 80, 22, 6, 6);
+            g.setFont(new Font("Consolas", Font.BOLD, 9));
+            g.setColor(busy ? theme.accent() : theme.muted());
+            g.drawString(busy ? "TASK: " + person.task() + " [" + person.taskTicksLeft() + "T]" : "STATUS: ON-STANDBY / READY", x + 26, y + 173);
+
             int cx = x + cardWidth - 34, cy = y + 36;
-            g.setColor(theme.grid()); g.setStroke(new BasicStroke(4)); g.drawOval(cx - 16, cy - 16, 32, 32);
+            g.setColor(theme.grid()); g.setStroke(new BasicStroke(3)); g.drawOval(cx - 16, cy - 16, 32, 32);
             if (person.taskTicksLeft() > 0) {
                 g.setColor(theme.accent());
                 double progress = 1 - Math.min(1, person.taskTicksLeft() / 20d);
@@ -59,12 +84,14 @@ public final class CrewView extends MissionView {
                 int bx = x + 18 + (task % 2) * (buttonWidth + 10);
                 int by = buttonY + (task / 2) * 25;
                 boolean enabled = person.alive() && person.taskTicksLeft() == 0;
-                g.setColor(enabled ? theme.panelRaised() : theme.grid());
-                g.fillRoundRect(bx, by, buttonWidth, 21, 7, 7);
+                g.setColor(enabled ? theme.panelRaised() : theme.panel());
+                g.fillRoundRect(bx, by, buttonWidth, 22, 6, 6);
+                g.setColor(enabled ? theme.grid() : new Color(theme.grid().getRed(), theme.grid().getGreen(), theme.grid().getBlue(), 50));
+                g.drawRoundRect(bx, by, buttonWidth, 22, 6, 6);
                 g.setColor(enabled ? theme.foreground() : theme.muted());
-                g.setFont(new Font("Segoe UI", Font.BOLD, 8));
+                g.setFont(new Font("Segoe UI", Font.BOLD, 9));
                 String taskLabel = tasks[task].name().replace('_', ' ');
-                g.drawString(taskLabel, bx + Math.max(5, (buttonWidth - g.getFontMetrics().stringWidth(taskLabel)) / 2), by + 14);
+                g.drawString(taskLabel, bx + Math.max(5, (buttonWidth - g.getFontMetrics().stringWidth(taskLabel)) / 2), by + 15);
             }
         }
         small(g, taskMessage, margin, height - 18);
