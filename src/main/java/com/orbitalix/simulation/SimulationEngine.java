@@ -263,8 +263,10 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
             recommend("shed-load", "Power reserve falling", "Shed non-essential loads or reorient the solar array.", 80, ActionRisk.SAFE);
         if (courseError > 5 || faults.containsKey(FaultType.SENSOR_DRIFT) || faults.containsKey(FaultType.NAV_DRIFT))
             recommend("recalibrate-gyro", "Attitude/navigation drift", "Recalibrate guidance before course error grows.", 80, ActionRisk.SAFE);
-        if (oxygen < 25 || co2 > 4 || pressure < 80 || faults.containsKey(FaultType.HULL_BREACH))
-            recommend("seal-breach", "Cabin atmosphere unsafe", "Seal the hull and protect crew life support.", 100, ActionRisk.COSTLY);
+        if (pressure < 80 || faults.containsKey(FaultType.HULL_BREACH))
+            recommend("seal-breach", "Cabin pressure critical", "Seal the hull breach to restore pressure.", 100, ActionRisk.COSTLY);
+        if (oxygen < 25 || co2 > 4 || faults.containsKey(FaultType.SCRUBBER_FAILURE))
+            recommend("backup-scrubber", "Cabin atmosphere unsafe", "Engage backup scrubber to restore oxygen and scrub CO2.", 95, ActionRisk.COSTLY);
         if (radiation > 3 || activeStormTicks > 0)
             recommend("radiation-shelter", "Radiation exposure rising", "Shield crew and non-essential electronics.", 90, ActionRisk.COSTLY);
         if (debrisImpact > 0)
@@ -327,6 +329,14 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
                 suppressRecommendation("backup-sensor");
                 emit(EventType.SELF_HEALING, Severity.INFO, "SELF-HEALING: redundant sensor channel selected");
                 recommendations.remove("backup-sensor");
+            }
+            if (faults.remove(FaultType.SCRUBBER_FAILURE) != null || (co2 > 4 && !backupScrubber) || (oxygen < 25 && !backupScrubber)) {
+                backupScrubber = true;
+                co2 = Math.min(co2, 1.2);
+                oxygen = Math.max(oxygen, 35);
+                suppressRecommendation("backup-scrubber");
+                emit(EventType.SELF_HEALING, Severity.INFO, "SELF-HEALING: backup scrubber engaged and cabin atmosphere normalized");
+                recommendations.remove("backup-scrubber");
             }
         }
         syncModelFromEngine();
@@ -455,6 +465,16 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
             }
             syncEngineFromModel();
             if (id.equals("evade-debris")) debrisImpact = -1;
+            if (id.equals("backup-scrubber") || id.equals("life-support")) {
+                backupScrubber = true;
+                faults.remove(FaultType.SCRUBBER_FAILURE);
+                co2 = Math.min(co2, 1.2);
+                oxygen = Math.max(oxygen, 35);
+            }
+            if (id.equals("seal-breach") || id.equals("hull-breach")) {
+                faults.remove(FaultType.HULL_BREACH);
+                pressure = Math.min(101, pressure + 25);
+            }
             recommendations.remove(id);
             suppressRecommendation(id);
             emit(actor.equals("HUMAN") ? EventType.ACTION_BY_HUMAN : EventType.ACTION_BY_AUTOPILOT,
@@ -467,14 +487,14 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
             case "activate-radiators" -> { radiators = true; coolant = true; faults.remove(FaultType.OVERHEAT); faults.remove(FaultType.COOLANT_FAILURE); yield true; }
             case "shed-load" -> { nonEssential = false; solarReoriented = true; yield true; }
             case "recalibrate-gyro" -> { courseError = Math.min(courseError, 1); faults.remove(FaultType.SENSOR_DRIFT); faults.remove(FaultType.NAV_DRIFT); yield true; }
-            case "seal-breach" -> { if (sealant > 0) { sealant--; pressure = Math.min(101, pressure + 18); faults.remove(FaultType.HULL_BREACH); yield true; } yield false; }
+            case "seal-breach" -> { if (sealant > 0) sealant--; pressure = Math.min(101, pressure + 25); faults.remove(FaultType.HULL_BREACH); yield true; }
             case "radiation-shelter" -> { shielded = true; throttle = Math.min(throttle, 60); yield true; }
             case "evade-debris" -> { if (fuel >= 4) { fuel -= 4; courseError += 1; debrisImpact = -1; faults.remove(FaultType.DEBRIS_THREAT); yield true; } yield false; }
             case "reboot-computer" -> { computerError = 0; computerFreeze = 0; faults.remove(FaultType.COMPUTER_FAULT); yield true; }
             case "backup-antenna" -> { backupAntenna = true; faults.remove(FaultType.DROPOUT); yield true; }
             case "backup-sensor" -> { faults.remove(FaultType.SPIKE); faults.remove(FaultType.STUCK_VALUE); yield true; }
             case "backup-engine" -> { backupEngine = true; faults.remove(FaultType.ENGINE_MISFIRE); yield true; }
-            case "backup-scrubber" -> { backupScrubber = true; faults.remove(FaultType.SCRUBBER_FAILURE); yield true; }
+            case "backup-scrubber" -> { backupScrubber = true; faults.remove(FaultType.SCRUBBER_FAILURE); co2 = Math.min(co2, 1.2); oxygen = Math.max(oxygen, 35); yield true; }
             case "restore-limits" -> { limits.clear(); limits.putAll(DEFAULT_LIMITS); overridden = false; yield true; }
             default -> false;
         };

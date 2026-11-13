@@ -1,106 +1,179 @@
-GitHub repository: https://github.com/Yash230306/OrbitalX
+# OrbitalX — Spacecraft Mission Control & Autonomous Recovery Suite
 
-# OrbitalX — Spacecraft Mission Control
+[![Java 17](https://img.shields.io/badge/Java-17%20LTS-orange.svg)](https://openjdk.org/projects/jdk/17/)
+[![Dependencies](https://img.shields.io/badge/Dependencies-Zero%20(Pure%20JavaSE)-blue.svg)](https://docs.oracle.com/en/java/javase/17/)
+[![GUI](https://img.shields.io/badge/GUI-Swing%20%2F%20Java2D-green.svg)](https://en.wikipedia.org/wiki/Swing_(Java))
+[![Architecture](https://img.shields.io/badge/Design-Object--Oriented-purple.svg)](docs/OOP_GUIDE.md)
 
-OrbitalX is a Java 17 mission-control simulator for spacecraft telemetry, subsystem faults, human and autonomous recovery, replay, and reporting. The Swing/Java2D desktop console and the interactive command-line mode share the same simulation API and engine. The project has no third-party runtime dependencies.
+**OrbitalX** is a desktop aerospace mission-control simulator and autonomous recovery testbed built with pure Java 17. It models real-time spacecraft physics, environmental hazards, sensor streams, telemetry anomalies, autonomous recovery chains, crew interventions, and time-travel replay without external runtime dependencies.
 
-## Features
+---
 
-- Deterministic missions with configurable destination, spacecraft, difficulty, seed, scenarios, and injected faults.
-- Sensor history and anomaly detection, trend prediction, operating limits, and resource/subsystem/crew status.
-- Manual, timed-autopilot, and full-auto responses; escalation to the crew; optional automatic self-healing.
-- Delayed uplink, crew task assignment, action recommendations, what-if previews, and event history/replay.
-- Ten GUI views: Dashboard, Cutaway, Orbit, Planner, Console, Settings, Systems, Crew, Replay, and Reports.
-- HTML and CSV report exports, achievements and scoring, four themes, synthesized notifications, and configurable settings.
-- A self-test suite and a headless 80-image screenshot matrix (10 views × 4 themes × 2 resolutions).
+## Highlights
 
-## Requirements
+* **Pure Java 17 Architecture**: Built entirely on standard Java libraries (`java.awt`, `javax.swing`, `java.nio`, `java.time`) — zero third-party dependencies, zero complex frameworks.
+* **10 Desktop Mission Consoles**: 
+  1. **Dashboard**: Primary avionics panel with 6 instrument arc gauges, vertical throttle lever, operating limit sliders, and dynamic Mission Advisor.
+  2. **3D Cutaway**: Real-time 3D spacecraft rasterizer with dual-source space sunlight, Blinn-Phong specular reflections, 8 authentic aerospace modules, and tactical HUD telemetry.
+  3. **Orbit Map**: Ground-track trajectory radar, orbital velocity vectors, communication delay cones, and debris threat corridors.
+  4. **Flight Planner**: Maneuver sequencing, delta-V burn budgeting, and 30-tick what-if lookahead forecasts.
+  5. **Systems Tree**: Component topology graph displaying failure cascades, sensor sparklines, and active fault badges.
+  6. **Crew Quarters**: Astronaut life signs (Health, Stress, Radiation) and direct tasking (`EVA_REPAIR`, `MEDICAL_CARE`, `MANUAL_REBOOT`, `REST`).
+  7. **Time-Travel Replay**: Memento-pattern timeline scrubber allowing rewinding and replaying mission events tick-by-tick.
+  8. **Avionics Console**: Aviation terminal with command history and Tab completion.
+  9. **Reports**: Single-click export of HTML5 mission dossiers and CSV telemetry spreadsheets.
+  10. **Settings**: On-the-fly theme switching (Dark Mission, Lunar Light, Retro Amber, Cyberpunk Neon) and autonomy tuning.
+* **Autonomous Resolution Chain**: Implements a four-tier Chain of Responsibility (`Self-Healing Circuits` → `Timed Autopilot` → `Crew Tasking` → `Ground Escalation`).
+* **Object-Oriented Excellence**: Implements 12+ GoF design patterns (State, Command, Observer, Strategy, Chain of Responsibility, Visitor, Memento, Decorator, Composite, Factory, Prototype, Facade). See [**`docs/OOP_GUIDE.md`**](docs/OOP_GUIDE.md).
 
-- JDK 17 or newer (`java` and `javac` on `PATH`).
-- Windows: use the `.bat` scripts. Linux/macOS: use the `.sh` scripts.
+---
 
-## Build and run
+## Directory Structure
 
-From the repository root on Windows:
+```text
+OrbitalX/
+├── compile.bat                  # Windows compilation script
+├── run.bat                      # Windows launcher script
+├── compile.sh                   # Linux/macOS compilation script
+├── run.sh                       # Linux/macOS launcher script
+├── pom.xml                      # Standard Maven build descriptor
+├── docs/                        # Architecture guides, UML, screenshots, manuals
+│   ├── OOP_GUIDE.md             # Comprehensive OOP Architecture & Design Patterns Guide
+│   ├── OOP_CONCEPT_MAP.md       # Visual syllabus & pattern breakdown
+│   ├── ARCHITECTURE.md          # Subsystem design & component overview
+│   ├── BEGINNER_GUIDE.pdf       # Walkthrough manual with annotated cockpit diagrams
+│   ├── puml/                    # PlantUML sequence and class diagrams
+│   └── screenshots/             # 80-image capture matrix of all views & themes
+└── src/main/java/com/orbitalix/ # Clean modular source tree
+    ├── action/                  # Command pattern: corrective actions
+    ├── advisor/                 # Diagnostic rules and recommendation engine
+    ├── alert/                   # Event notification & dispatch
+    ├── api/                     # Public contracts, records, and enums
+    ├── app/                     # Main entry points (GUI and CLI)
+    ├── autonomy/                # Chain of Responsibility: autopilot & self-healing
+    ├── comms/                   # Communication channels & speed-of-light uplink delay
+    ├── config/                  # Craft factories, destinations, and difficulties
+    ├── crew/                    # Astronaut roles, skills, and command tasks
+    ├── detection/               # Telemetry detectors (Threshold, RateOfChange, Z-Score)
+    ├── event/                   # Central publish-subscribe EventBus
+    ├── exception/               # Strongly-typed domain exceptions
+    ├── gui/                     # Swing & Java2D cockpit views and rendering engine
+    │   ├── render3d/            # Software 3D rasterizer, camera, matrix, and meshes
+    │   └── theme/               # Cybernetic color palettes and styling
+    ├── model/                   # Spacecraft avionics, physics, and subsystems
+    ├── replay/                  # Memento history snapshots and replay controller
+    ├── report/                  # Visitor pattern: HTML, CSV, and text reports
+    ├── resource/                # Physical consumables (Fuel, Battery, Oxygen, Sealant)
+    ├── scoring/                 # Grade calculations and mission achievements
+    ├── sensor/                  # Decorator pattern: physical sensor telemetry & noise
+    ├── simulation/              # Deterministic simulation engine and self-test harness
+    ├── state/                   # State pattern: Nominal, Warning, Critical, Safe Mode
+    └── util/                    # Circular ring buffers, deterministic RNG, clock
+```
+
+---
+
+## Quick Start
+
+### Prerequisites
+- **Java 17 LTS or newer** (`java` and `javac` accessible on your `PATH`).
+
+### Build & Run on Windows
 
 ```powershell
+# Compile the project
 .\compile.bat
+
+# Launch the Mission Control GUI
 .\run.bat
+
+# Launch interactive CLI Console mode
 .\run.bat --cli
+
+# Execute the automated Self-Test suite (108 scenario matrix)
 .\run.bat --selftest
+
+# Generate headless screenshots of all views in all themes
 .\run.bat --screenshots out\screenshots
 ```
 
-`run.bat` compiles the active `src/main/java` source tree before launching. The supported application modes are the GUI (no arguments), `--cli`, `--selftest`, and `--screenshots <directory>`. The screenshot harness captures all registered views in four themes at 1280×720 and 1920×1080.
+### Build & Run on Linux / macOS
 
-On Linux/macOS:
+```bash
+chmod +x *.sh
 
-```sh
+# Compile
 ./compile.sh
+
+# Run Desktop GUI
 ./run.sh
+
+# Run CLI mode
 ./run.sh --cli
+
+# Run Self-Test
 ./run.sh --selftest
-./run.sh --screenshots out/screenshots
 ```
 
-## Command-line controls
+### Build with Apache Maven
 
-Start with `help`. The CLI accepts `tick` or `tick <count>` to advance the simulation and supports the simulation commands listed by `help`, including:
+```bash
+# Compile and package
+mvn clean package
+
+# Run via Maven
+mvn exec:java
+```
+
+---
+
+## Cockpit Shortcuts & Hotkeys
+
+| Shortcut | Function | Description |
+| :--- | :--- | :--- |
+| `0` .. `9` | **Console Select** | Directly switches between the 10 navigation views |
+| `Space` | **Launch / Pause** | Toggles simulation clock execution |
+| `Ctrl + K` | **Quick Command** | Focuses the command input field |
+| `Ctrl + S` | **Screenshot** | Captures the active viewport to `out/screenshots` |
+| `F11` | **Fullscreen** | Toggles borderless mission-control fullscreen mode |
+| `Escape` | **Cancel** | Clears active prompt or closes modal overlays |
+
+---
+
+## Command Console (CLI)
+
+The internal CLI terminal and standalone `--cli` mode support a comprehensive command set:
 
 ```text
-status
-throttle 60
-inject fuel-leak
-exec <recommendation-id>
-dismiss <recommendation-id>
-autonomy manual|timed|full
-heal on|off
-uplink on|off
-limits [type value [override]]
-crew
-task <crew-name-or-role> <task>
-preview <recommendation-id> [ticks]
-scenario <index>
-config destination|craft|difficulty <name>
-seek <tick>
-report
-quit
+help                                 List available commands
+status                               Display current spacecraft telemetry
+throttle <percent>                   Set main engine thrust (0..100)
+inject <fault-type>                  Simulate a hardware failure (e.g. fuel-leak, overheat)
+exec <recommendation-id>             Execute a diagnostic recommendation
+dismiss <recommendation-id>          Dismiss an active recommendation
+autonomy manual|timed|full           Adjust supervisory autonomy level
+heal on|off                          Toggle automatic self-healing circuits
+uplink on|off                        Toggle speed-of-light radio delay
+limits [type value [override]]       View or override safety limits
+crew                                 List astronaut status, health, and current task
+task <name> <task>                   Assign astronaut task (EVA_REPAIR, MEDICAL_CARE, etc.)
+preview <id> [ticks]                 Run what-if forward prediction
+scenario <1-12>                      Load a pre-configured flight scenario
+report                               Generate mission summary
+quit                                 Exit console mode
 ```
 
-The standalone CLI also accepts `tick` and `tick <count>` to advance the mission.
-Events are printed to the terminal and appended to `out/mission-events.log`; report and telemetry export controls are also available in the Reports view.
+---
 
-## GUI shortcuts
+## Documentation
 
-- `0`–`9`: select Planner, Dashboard, Cutaway, Orbit, Systems, Crew, Replay, Console, Reports, and Settings, respectively. (The small numbers printed on the navigation rail use a different mapping.)
-- `Space`: start/pause the mission.
-- `Ctrl+K`: focus the command field.
-- `Ctrl+S`: capture the screenshot matrix into `out\screenshots`.
-- `F11`: toggle fullscreen.
-- `Escape`: clear the active command.
+- [**OOP Architecture Guide**](docs/OOP_GUIDE.md): In-depth 10-section breakdown of object-oriented principles, design patterns, and package topologies.
+- [**OOP Concept Map**](docs/OOP_CONCEPT_MAP.md): Detailed syllabus alignment and design pattern inventory.
+- [**Beginner's Flight Manual (PDF)**](docs/BEGINNER_GUIDE.pdf): Visual pilot's manual covering all displays, instruments, and procedures.
+- [**Architectural Overview**](docs/ARCHITECTURE.md): Component diagrams, state machines, and data flow pipelines.
 
-The GUI Console view's command field supports Up/Down history and Tab completion.
+---
 
-## Architecture and implementation notes
+## License
 
-The UI depends on the `SimulationController` API rather than the engine. `DefaultSimulationController` is a facade over `SimulationEngine`; the engine composes the spacecraft model, detection/advice/autonomy pipeline, event bus, replay history, scoring, and report generation. The comprehensive OOP architectural guide is in [**`docs/OOP_GUIDE.md`**](docs/OOP_GUIDE.md), with further concept mapping and diagrams in [`docs/OOP_CONCEPT_MAP.md`](docs/OOP_CONCEPT_MAP.md), [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), and [`docs/puml/`](docs/puml/).
-
-See [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) for the A1–A17 requirements and delivery record. Representative UI and scenario captures are in [`docs/screenshots/`](docs/screenshots/); a generated completed-mission example is [`docs/sample-mission-report.html`](docs/sample-mission-report.html).
-For a first-time walkthrough, see the [Dark Edition Beginner's Guide PDF](docs/BEGINNER_GUIDE.pdf), with a screenshot and explanation for every application view and a project-specific OOP chapter (editable HTML source: [`docs/BEGINNER_GUIDE.html`](docs/BEGINNER_GUIDE.html)).
-
-## Screenshot gallery
-
-The documentation directory contains 16 PNG captures: nine scenario/dashboard/orbit examples and seven current GUI views:
-
-- [Planner](docs/screenshots/10_planner.png) · [Dashboard](docs/screenshots/11_dashboard.png) · [3D Cutaway](docs/screenshots/12_cutaway_3d.png)
-- [Systems](docs/screenshots/13_systems.png) · [Crew](docs/screenshots/14_crew.png) · [Replay](docs/screenshots/15_replay.png) · [Reports](docs/screenshots/16_reports.png)
-
-## Validation
-
-```powershell
-.\compile.bat
-java -cp out com.orbitalix.app.Main --selftest
-java -cp out com.orbitalix.app.Main --screenshots out\screenshots
-```
-
-The self-test suite checks deterministic mission behavior, API and model contracts, response escalation, self-healing enabled/disabled behavior, GUI interactions, replay, reports, keyboard shortcuts, and the demo story.
+This project is licensed under the [MIT License](LICENSE).

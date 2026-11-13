@@ -241,7 +241,14 @@ public class MissionView extends View {
                     || tile.equals("AUTOPILOT") && !snapshot.autopilotOnline()
                     || tile.equals("LIMITS") && snapshot.limits().stream().anyMatch(LimitSnapshot::overridden)
                     || tile.equals("FUEL") && snapshot.resources().stream().anyMatch(resource ->
-                        resource.name().equalsIgnoreCase("fuel") && resource.level() < resource.capacity() * .25);
+                        resource.name().equalsIgnoreCase("fuel") && resource.level() < resource.capacity() * .25)
+                    || tile.equals("O2") && snapshot.resources().stream().anyMatch(resource ->
+                        resource.name().equalsIgnoreCase("oxygen") && resource.level() < 25)
+                    || tile.equals("CO2") && (faults.stream().anyMatch(f -> f.contains("SCRUBBER"))
+                        || snapshot.subsystems().stream().anyMatch(s -> s.name().equalsIgnoreCase("Life Support") && !s.activeFaults().isEmpty()))
+                    || tile.equals("PRESS") && (faults.stream().anyMatch(f -> f.contains("BREACH"))
+                        || snapshot.subsystems().stream().anyMatch(s -> s.name().equalsIgnoreCase("Life Support") && s.status() != HealthStatus.NOMINAL))
+                    || tile.equals("CREW") && snapshot.crew().stream().anyMatch(c -> !c.alive() || c.health() < 35 || c.stress() > 80);
             int tx = x + 16 + (i % columns) * (tileWidth + gap);
             int ty = y + 34 + (i / columns) * (tileHeight + 5);
             g.setColor(active ? theme.critical() : theme.panelRaised());
@@ -295,6 +302,8 @@ public class MissionView extends View {
         RecommendationSnapshot recommendation = snapshot.recommendations().get(row);
         int buttonWidth = (layout.sideW() - 42) / 3;
         int relativeX = x - (layout.sideX() + 20);
+        if (relativeX < 0 || relativeX > buttonWidth * 3 + 12) return;
+
         if (relativeX < buttonWidth + 4) {
             PreviewResult result = controller.previewRecommendation(recommendation.id(), 30);
             String critical = result.ticksToCritical() < 0 ? "NO CRITICAL" : "CRITICAL IN " + result.ticksToCritical() + "T";
@@ -303,9 +312,11 @@ public class MissionView extends View {
                     + number(result.fuelAfter()) + " / " + critical + " / " + effect;
         } else if (relativeX < buttonWidth * 2 + 8) {
             controller.executeRecommendation(recommendation.id());
-            previewMessage = "EXECUTING: " + recommendation.title();
+            this.snapshot = controller.snapshot();
+            previewMessage = "EXECUTED: " + recommendation.title();
         } else {
             controller.dismissRecommendation(recommendation.id());
+            this.snapshot = controller.snapshot();
             previewMessage = "DISMISSED: " + recommendation.title();
         }
         repaint();
