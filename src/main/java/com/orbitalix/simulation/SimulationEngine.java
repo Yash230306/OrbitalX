@@ -553,7 +553,19 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
     private void finishCrewTask(CrewState member) {
         if (member.task == CrewTaskType.MEDICAL_CARE) member.health = Math.min(100, member.health + 30);
         if (member.task == CrewTaskType.REST) member.stress = Math.max(0, member.stress - 30);
-        if (member.task == CrewTaskType.EVA_REPAIR && member.targetFault != null) faults.remove(member.targetFault);
+        if (member.task == CrewTaskType.EVA_REPAIR) {
+            if (member.targetFault != null) {
+                faults.remove(member.targetFault);
+            } else if (!faults.isEmpty()) {
+                FaultType toClear = faults.keySet().stream()
+                        .filter(f -> f == FaultType.HULL_BREACH || f == FaultType.FUEL_LEAK
+                                || f == FaultType.SOLAR_FAILURE || f == FaultType.COOLANT_FAILURE
+                                || f == FaultType.SCRUBBER_FAILURE)
+                        .findFirst()
+                        .orElse(faults.keySet().iterator().next());
+                faults.remove(toClear);
+            }
+        }
         if (member.task == CrewTaskType.MANUAL_REBOOT) { computerError = 0; computerFreeze = 0; faults.remove(FaultType.COMPUTER_FAULT); }
         emit(EventType.CREW, Severity.INFO, member.name + " completed " + member.task);
         member.task = null;
@@ -672,7 +684,15 @@ public final class SimulationEngine implements Copyable<SimulationEngine> {
         if (task == CrewTaskType.EVA_REPAIR && activeStormTicks > 0) throw new IllegalStateException("EVA is unsafe during a radiation storm");
         member.task = Objects.requireNonNull(task);
         member.taskTicks = switch (task) { case EVA_REPAIR -> 10; case MEDICAL_CARE -> 8; case MANUAL_REBOOT -> 5; case REST -> 6; };
-        emit(EventType.CREW, Severity.INFO, name + " assigned " + task);
+        if (task == CrewTaskType.EVA_REPAIR) {
+            member.targetFault = faults.keySet().stream()
+                    .filter(f -> f == FaultType.HULL_BREACH || f == FaultType.FUEL_LEAK
+                            || f == FaultType.SOLAR_FAILURE || f == FaultType.COOLANT_FAILURE
+                            || f == FaultType.SCRUBBER_FAILURE)
+                    .findFirst()
+                    .orElse(faults.isEmpty() ? null : faults.keySet().iterator().next());
+        }
+        emit(EventType.CREW, Severity.INFO, name + " assigned " + task + (member.targetFault != null ? " targeting " + member.targetFault : ""));
     }
     private void submitOrRun(String command, Runnable action) {
         if (uplinkEnabled) {

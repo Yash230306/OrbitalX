@@ -57,6 +57,7 @@ public final class MainWindow extends JFrame {
     private View activeView;
     private SplashScreen splashScreen;
     private JPanel root;
+    private NavRail navRail;
     private BottomTicker bottomTicker;
     private MissionEventListener toastListener;
 
@@ -158,6 +159,7 @@ public final class MainWindow extends JFrame {
         stage.add(activeView, JLayeredPane.DEFAULT_LAYER);
         if (effectsOverlay.getParent() != stage) stage.add(effectsOverlay, JLayeredPane.PALETTE_LAYER);
         if (toastLayer.getParent() != stage) stage.add(toastLayer, JLayeredPane.PALETTE_LAYER);
+        if (navRail != null) navRail.repaint();
         stage.revalidate();
         stage.repaint();
         revalidate();
@@ -168,7 +170,8 @@ public final class MainWindow extends JFrame {
         JPanel root = new JPanel(new BorderLayout(0, 0));
         root.setBackground(theme.background());
         root.add(new TopBar(), BorderLayout.NORTH);
-        root.add(new NavRail(), BorderLayout.WEST);
+        navRail = new NavRail();
+        root.add(navRail, BorderLayout.WEST);
         root.add(stage, BorderLayout.CENTER);
         root.add(new Footer(), BorderLayout.SOUTH);
         return root;
@@ -359,26 +362,36 @@ public final class MainWindow extends JFrame {
             setPreferredSize(new Dimension(185, 0));
             for (int i = 0; i < VIEWS.size(); i++) {
                 final String view = VIEWS.get(i);
-                final boolean isCurrent = view.equals(selectedView);
                 final int hotkey = (i + 1) % 10;
                 JButton button = new JButton() {
                     @Override protected void paintComponent(Graphics graphics) {
                         Graphics2D g = (Graphics2D) graphics.create();
                         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        boolean isCurrent = view.equalsIgnoreCase(selectedView);
                         if (isCurrent) {
-                            g.setColor(theme.panelRaised());
+                            g.setColor(new Color(theme.panelRaised().getRed(), theme.panelRaised().getGreen(), theme.panelRaised().getBlue(), 220));
                             g.fillRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 8, 8);
+                            // Glowing accent highlight fill
+                            g.setColor(new Color(theme.accent().getRed(), theme.accent().getGreen(), theme.accent().getBlue(), 32));
+                            g.fillRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 8, 8);
+                            // Neon active indicator bar
                             g.setColor(theme.accent());
-                            g.fillRoundRect(2, 4, 4, getHeight() - 8, 3, 3);
+                            g.fillRoundRect(3, 4, 4, getHeight() - 8, 3, 3);
+                            // Outer active border
+                            g.setColor(new Color(theme.accent().getRed(), theme.accent().getGreen(), theme.accent().getBlue(), 85));
+                            g.setStroke(new BasicStroke(1f));
+                            g.drawRoundRect(2, 2, getWidth() - 5, getHeight() - 5, 8, 8);
                         } else if (getModel().isRollover()) {
-                            g.setColor(new Color(theme.grid().getRed(), theme.grid().getGreen(), theme.grid().getBlue(), 70));
+                            g.setColor(new Color(theme.grid().getRed(), theme.grid().getGreen(), theme.grid().getBlue(), 75));
                             g.fillRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 8, 8);
+                            g.setColor(new Color(theme.accent().getRed(), theme.accent().getGreen(), theme.accent().getBlue(), 40));
+                            g.drawRoundRect(2, 2, getWidth() - 5, getHeight() - 5, 8, 8);
                         }
                         g.setColor(isCurrent ? theme.accent() : theme.muted());
                         g.setFont(new Font("Consolas", Font.BOLD, 10));
                         g.drawString("[" + hotkey + "]", 12, getHeight() / 2 + 4);
 
-                        g.setColor(isCurrent ? theme.foreground() : theme.muted());
+                        g.setColor(isCurrent ? theme.foreground() : (getModel().isRollover() ? theme.foreground() : theme.muted()));
                         g.setFont(new Font("Segoe UI", isCurrent ? Font.BOLD : Font.PLAIN, 12));
                         g.drawString(view.toUpperCase(Locale.ROOT), 42, getHeight() / 2 + 4);
                         g.dispose();

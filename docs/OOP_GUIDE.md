@@ -156,6 +156,13 @@ OrbitalX avoids monolithic `if-else` or `switch` statements for behavioral logic
    - Base class `CrewMember` tracks stamina, stress, radiation dosage, and task state.
    - Derived classes (`Commander`, `FlightEngineer`, `MedicalOfficer`, `Pilot`) override work efficiency coefficients, task affinities, and specialized skills.
 
+#### Deep Dive: How Crew Tasks Drive Simulation Survival
+In OrbitalX, astronauts are not passive passengers; their actions are critical avionics interventions that prevent mission failure:
+* **`EVA_REPAIR` (Extravehicular Spacewalk)**: Dispatches an astronaut outside the hull to repair physical hardware failures (`HULL_BREACH`, `FUEL_LEAK`, `SOLAR_FAILURE`, `COOLANT_FAILURE`, `SCRUBBER_FAILURE`). If a hull breach or fuel leak goes unresolved, cabin pressure drops to zero or propellant runs dry, terminating the mission with `LOST - LIFE SUPPORT` or `LOST - FUEL EXHAUSTED`. Flight Engineers receive a 40% duration speed bonus on EVA operations.
+* **`MEDICAL_CARE` (Trauma & Stasis Therapy)**: Restores astronaut vitals (+30 HP). Hostile environments (hypoxia, CO2 poisoning, decompression, radiation storms) drain astronaut health every tick. If all crew vitals reach zero, the spacecraft drifts inert and the mission is permanently lost. Medical Officers administer trauma care with accelerated turnaround.
+* **`MANUAL_REBOOT` (Avionics Hard Recycle)**: Recycles the flight guidance computers, unfreezing locked CPU threads and resetting error registers (`COMPUTER_FAULT`). When flight computer lockup occurs, automated telemetry and autopilot rules freeze; manual crew intervention is required to restore automated flight control.
+* **`REST` (Quarters Recuperation)**: Decreases psychological stress (-30% Stress). Sustained emergencies, extreme temperatures, and alarms cause crew stress to spike. High stress leads to operational paralysis and accelerated vitals degradation.
+
 ---
 
 ### Interface Segregation & Contracts
