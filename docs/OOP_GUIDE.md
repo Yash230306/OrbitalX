@@ -1,5 +1,10 @@
 # OrbitalX: Comprehensive Object-Oriented Programming (OOP) Architectural Guide
 
+> **Official Deliverables**:
+> - 📄 **Complete Printable OOP Guide (PDF, 28 pages)**: [`docs/OrbitalX_OOP_Guide.pdf`](OrbitalX_OOP_Guide.pdf)
+> - 🌐 **Interactive Standalone Guide (HTML)**: [`docs/OrbitalX_OOP_Guide.html`](OrbitalX_OOP_Guide.html)
+> - 🗺️ **Concept Traceability Map**: [`docs/OOP_CONCEPT_MAP.md`](OOP_CONCEPT_MAP.md)
+>
 > **Core Mission**: OrbitalX is designed from first principles as an aerospace mission-control simulator demonstrating how enterprise-grade Object-Oriented Programming (OOP), SOLID design principles, and classical GoF Design Patterns model complex, deterministic, distributed mission-critical avionics in pure Java 17.
 
 ---
