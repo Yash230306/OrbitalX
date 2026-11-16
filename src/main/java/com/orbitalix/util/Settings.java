@@ -30,7 +30,7 @@ public final class Settings {
         try {
             Files.createDirectories(file.getParent());
             try (OutputStream output = Files.newOutputStream(file)) {
-                values.store(output, "OrbitalIX settings");
+                values.store(output, "OrbitalX settings");
             }
         } catch (IOException e) {
             throw new IllegalStateException("Unable to save settings to " + file, e);

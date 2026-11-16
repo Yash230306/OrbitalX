@@ -58,7 +58,7 @@ public final class ConsoleView extends View {
             }
         });
         add(input, BorderLayout.SOUTH);
-        append("ORBITALIX FLIGHT COMPUTER / CORE LINK ESTABLISHED", theme.accent());
+        append("ORBITALX FLIGHT COMPUTER / CORE LINK ESTABLISHED", theme.accent());
         append("Type help to list commands.", theme.muted());
     }
 

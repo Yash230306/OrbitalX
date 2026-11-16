@@ -36,7 +36,7 @@ public final class Main {
         try (MissionRecorder recorder = new MissionRecorder(Path.of("out", "mission-events.log"))) {
             controller.addEventListener(recorder);
             controller.addEventListener(event -> System.out.printf("[T+%d][%s] %s%n", event.tick(), event.severity(), event.message()));
-            System.out.println("OrbitalIX Mission Control CLI - type help, tick [n], or quit");
+            System.out.println("OrbitalX Mission Control CLI - type help, tick [n], or quit");
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String line;
             while ((line = reader.readLine()) != null) {

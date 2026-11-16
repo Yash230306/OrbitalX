@@ -1,8 +1,8 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>OrbitalX — Beginner's Guide (Dark Edition)</title>
+<title>OrbitalX â€” Beginner's Guide (Dark Edition)</title>
 <style>
 @page { size: Letter; margin: 0.68in 0.72in 0.7in; background: #0b1220; }
 * { box-sizing: border-box; }
@@ -47,14 +47,14 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
 </head>
 <body>
 <section class="cover">
-  <div class="eyebrow">A from-scratch guide · Dark Edition</div>
-  <h1>OrbitalX<br>Spacecraft Mission Control</h1>
-  <p class="subtitle">A plain-language guide to what the project does, how to start it, how to fly a mission, and what every screen and command is for.</p>
+  <div class="eyebrow">A from-scratch guide Â· Dark Edition</div>
+  <h1>OrbitalX<br>Space Mission Simulator</h1>
+  <p class="subtitle">A complete flight operations guide to commanding the simulator: cockpit screens, telemetry gauges, flight maneuvers, and emergency protocols.</p>
   <div class="coverbox">
     <strong>You do not need to know Java or spacecraft engineering to use this guide.</strong>
     OrbitalX is a learning simulator: it creates a pretend spacecraft mission, shows changing instrument readings, introduces equipment problems, and lets you choose how those problems are handled.
   </div>
-  <p><strong>Project:</strong> OrbitalX — a Java desktop and command-line simulator</p>
+  <p><strong>Project:</strong> OrbitalX â€” a Java desktop and command-line simulator</p>
   <p><strong>Repository:</strong> https://github.com/Yash230306/OrbitalX</p>
   <p><strong>Current branch:</strong> a1-a16-work &nbsp; | &nbsp; <strong>Java:</strong> 17 or newer</p>
   <p class="small">Prepared for a first-time user. Instructions below are for Windows PowerShell unless noted.</p>
@@ -77,18 +77,18 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
     <li><a href="#oop-autonomy">How the object design powers autonomy, replay, and reports</a></li>
     <li><a href="#oop-systems">Worked example: model objects become the Systems screen</a></li>
   </ol>
-  <div class="tip"><strong>For an OOP presentation:</strong> follow the Dashboard fuel-recommendation example in chapters 8–10. It traces one feature from the visible button, through the controller and engine, to the concrete action and spacecraft object.</div>
+  <div class="tip"><strong>For an OOP presentation:</strong> follow the Dashboard fuel-recommendation example in chapters 8â€“10. It traces one feature from the visible button, through the controller and engine, to the concrete action and spacecraft object.</div>
   <div class="note"><strong>Important distinction:</strong> when this guide names a class or interface, it refers to code that exists in this project. The OOP chapter explains what that code does while the simulator is running.</div>
 </section>
 
 <p class="page-break">&nbsp;</p>
 <section>
   <h2 id="start">Start here</h2>
-  <p>OrbitalX is a simulation, not a real spacecraft connection. Everything it changes—fuel, oxygen, faults, crew condition, and mission progress—is inside the program. It is safe to experiment with.</p>
+  <p>OrbitalX is a simulation, not a real spacecraft connection. Everything it changesâ€”fuel, oxygen, faults, crew condition, and mission progressâ€”is inside the program. It is safe to experiment with.</p>
   <p>Think of it as a pretend spacecraft dashboard on your computer. You choose a mission, watch the readings change, and decide how to respond to simulated problems. You do not need to operate every feature at once: begin with Free Flight and learn one screen at a time.</p>
   <h3>What is a mission-control simulator?</h3>
   <p>Imagine a vehicle travelling toward a destination. It has engines, power, temperature control, communications, navigation, life support, a computer, supplies, and crew. The program advances the mission in small steps called <em>ticks</em>. On each tick, the simulated spacecraft consumes resources, instruments report values, the software looks for trouble, and recommendations may appear.</p>
-  <p>A tick is a simulation step—not necessarily one real second. The GUI controls how quickly those steps run on your computer.</p>
+  <p>A tick is a simulation stepâ€”not necessarily one real second. The GUI controls how quickly those steps run on your computer.</p>
   <h3>Words you will see</h3>
   <table>
     <tr><th>Word</th><th>Simple meaning</th></tr>
@@ -135,7 +135,7 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
   </ol>
   <pre>.\run.bat</pre>
   <p>The first successful build prints <code>Compiled OK</code>. The desktop window should then appear. Keep the project files together; the scripts rely on the project folder structure.</p>
-  <p>The window opens on Dashboard. Click <strong>Planner</strong> in the left navigation rail to set up a new mission. The window needs a usable area of at least about 1280×800; maximize it if some controls look clipped.</p>
+  <p>The window opens on Dashboard. Click <strong>Planner</strong> in the left navigation rail to set up a new mission. The window needs a usable area of at least about 1280Ã—800; maximize it if some controls look clipped.</p>
   <h3>What the project folders are for</h3>
   <table>
     <tr><th>Folder / file</th><th>Plain-language purpose</th></tr>
@@ -211,7 +211,7 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
     <tr><td><strong>Footer command field + SEND</strong></td><td>Sends a typed CLI command to the same mission used by the GUI.</td><td>Type a command such as <code>help</code> or <code>status</code>, then press Enter or click SEND.</td></tr>
     <tr><td><strong>Footer status / REPLAY badge</strong></td><td>Reports command results and mission status. REPLAY indicates history is selected.</td><td>Display only; use the Replay view's controls to return to live history.</td></tr>
   </table>
-  <p class="small"><strong>Keyboard note:</strong> the small numbers printed beside navigation buttons are 1=Planner, 2=Dashboard, …, 9=Reports, 0=Settings. Keyboard shortcuts use a different mapping: 0=Planner, 1=Dashboard, …, 9=Settings. Click the view name if you are unsure.</p>
+  <p class="small"><strong>Keyboard note:</strong> the small numbers printed beside navigation buttons are 1=Planner, 2=Dashboard, â€¦, 9=Reports, 0=Settings. Keyboard shortcuts use a different mapping: 0=Planner, 1=Dashboard, â€¦, 9=Settings. Click the view name if you are unsure.</p>
   <table>
     <tr><th>View</th><th>What it is for</th><th>What you can do or learn</th></tr>
     <tr><td><strong>Planner</strong></td><td>Set up a new mission.</td><td>Choose destination, craft, difficulty, scenario, deterministic seed, and chaos setting; launch after the countdown.</td></tr>
@@ -231,11 +231,11 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
 </section>
 
 <section class="page screen-page">
-  <h2>Screen 1 of 10 · Planner</h2>
+  <h2>Screen 1 of 10 Â· Planner</h2>
   <p>Use the Planner to set up or restart a mission before the simulation begins.</p>
   <figure class="figure">
     <img src="screenshots/guide-planner-dark.png" alt="Dark Mission theme screenshot of the OrbitalX Planner view">
-    <figcaption>Planner — choose the mission destination, spacecraft, difficulty, scenario, seed, and chaos setting, then launch.</figcaption>
+    <figcaption>Planner â€” choose the mission destination, spacecraft, difficulty, scenario, seed, and chaos setting, then launch.</figcaption>
   </figure>
   <ul>
     <li><strong>DESTINATION:</strong> open the list and choose Moon, Mars Transfer, or Asteroid Belt. This changes trip length and the modeled environment.</li>
@@ -251,11 +251,11 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
 </section>
 
 <section class="page screen-page">
-  <h2>Screen 2 of 10 · Dashboard</h2>
+  <h2>Screen 2 of 10 Â· Dashboard</h2>
   <p>The Dashboard is the main live-flight overview: it brings together resource readings, mission health, and recommended responses.</p>
   <figure class="figure">
     <img src="screenshots/guide-dashboard-dark.png" alt="Dark Mission theme screenshot of the OrbitalX Dashboard with gauges, recommendation actions, throttle, and mission progress">
-    <figcaption>Dashboard — the example shows fuel, battery, oxygen, temperature, cabin pressure, radiation, throttle, operating limits, and a fuel-margin recommendation.</figcaption>
+    <figcaption>Dashboard â€” the example shows fuel, battery, oxygen, temperature, cabin pressure, radiation, throttle, operating limits, and a fuel-margin recommendation.</figcaption>
   </figure>
   <ul>
     <li><strong>Gauge cards:</strong> fuel, battery, oxygen, temperature, cabin pressure, and radiation are read-only meters. A status or estimate next to a meter is informational; it is not a button.</li>
@@ -271,11 +271,11 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
 </section>
 
 <section class="page screen-page">
-  <h2>Screen 3 of 10 · Cutaway</h2>
+  <h2>Screen 3 of 10 Â· Cutaway</h2>
   <p>Use the Cutaway to inspect the spacecraft model and the health summary for its major subsystems.</p>
   <figure class="figure">
     <img src="screenshots/guide-cutaway-dark.png" alt="Dark Mission theme screenshot of the OrbitalX Cutaway 3D spacecraft view">
-    <figcaption>Cutaway — the model is paired with subsystem status indicators so a fault can be related to a spacecraft component.</figcaption>
+    <figcaption>Cutaway â€” the model is paired with subsystem status indicators so a fault can be related to a spacecraft component.</figcaption>
   </figure>
   <ul>
     <li><strong>Spacecraft model:</strong> click a visible component to highlight its subsystem; click-drag to rotate the camera; use the mouse wheel to zoom.</li>
@@ -286,11 +286,11 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
 </section>
 
 <section class="page screen-page">
-  <h2>Screen 4 of 10 · Orbit</h2>
+  <h2>Screen 4 of 10 Â· Orbit</h2>
   <p>The Orbit view shows where the mission is going and how far it has progressed along its route.</p>
   <figure class="figure">
     <img src="screenshots/guide-orbit-dark.png" alt="Dark Mission theme screenshot of the OrbitalX Orbit route and telemetry view">
-    <figcaption>Orbit — inspect the planned, actual, and predicted course, destination, distance remaining, estimated time, and communications signal.</figcaption>
+    <figcaption>Orbit â€” inspect the planned, actual, and predicted course, destination, distance remaining, estimated time, and communications signal.</figcaption>
   </figure>
   <ul>
     <li><strong>Route display:</strong> compare the planned path, the recorded actual trail, and the predicted path. Earth, the vehicle, and destination are markers, not buttons.</li>
@@ -302,11 +302,11 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
 </section>
 
 <section class="page screen-page">
-  <h2>Screen 5 of 10 · Systems</h2>
+  <h2>Screen 5 of 10 Â· Systems</h2>
   <p>Use Systems to diagnose a specific subsystem rather than relying only on the overall Dashboard.</p>
   <figure class="figure">
     <img src="screenshots/guide-systems-dark.png" alt="Dark Mission theme screenshot of OrbitalX Systems with subsystem list, telemetry, and dependency graph">
-    <figcaption>Systems — select a subsystem to inspect its status, active faults, sensor trend, and dependency relationships.</figcaption>
+    <figcaption>Systems â€” select a subsystem to inspect its status, active faults, sensor trend, and dependency relationships.</figcaption>
   </figure>
   <ul>
     <li><strong>Subsystem list:</strong> click Navigation, Propulsion, Computer, Life Support, Attitude, Thermal, Communication, or Power. The selected row is highlighted.</li>
@@ -317,11 +317,11 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
 </section>
 
 <section class="page screen-page">
-  <h2>Screen 6 of 10 · Crew</h2>
+  <h2>Screen 6 of 10 Â· Crew</h2>
   <p>The Crew view tracks people on board and lets mission control assign work.</p>
   <figure class="figure">
     <img src="screenshots/guide-crew-dark.png" alt="Dark Mission theme screenshot of OrbitalX Crew member health and task controls">
-    <figcaption>Crew — each card shows role, health, stress, radiation dose, current task, and available assignments.</figcaption>
+    <figcaption>Crew â€” each card shows role, health, stress, radiation dose, current task, and available assignments.</figcaption>
   </figure>
   <ul>
     <li><strong>Each crew card:</strong> read the person's role and skill, health, stress, radiation dose, and task/readiness. The circular indicator shows task progress; the meters do not accept clicks.</li>
@@ -334,11 +334,11 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
 </section>
 
 <section class="page screen-page">
-  <h2>Screen 7 of 10 · Replay</h2>
+  <h2>Screen 7 of 10 Â· Replay</h2>
   <p>Replay is a review tool for recorded mission snapshots. It does not roll back or rewrite the live spacecraft.</p>
   <figure class="figure">
     <img src="screenshots/guide-replay-dark.png" alt="Dark Mission theme screenshot of the OrbitalX Replay timeline and telemetry history">
-    <figcaption>Replay — review recorded timeline markers, telemetry curves, and action totals.</figcaption>
+    <figcaption>Replay â€” review recorded timeline markers, telemetry curves, and action totals.</figcaption>
   </figure>
   <ul>
     <li><strong>Timeline:</strong> click or drag the marker to jump to a recorded tick. Colored event dots show where events occurred; the dots are markers, not separate buttons.</li>
@@ -351,11 +351,11 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
 </section>
 
 <section class="page screen-page">
-  <h2>Screen 8 of 10 · Console</h2>
+  <h2>Screen 8 of 10 Â· Console</h2>
   <p>The in-app Console is a command line for controlling and inspecting the same simulation shown in the other views.</p>
   <figure class="figure">
     <img src="screenshots/guide-console-dark.png" alt="Dark Mission theme screenshot of the OrbitalX onboard command terminal">
-    <figcaption>Console — enter a command in the bottom field and read the simulator's response in the terminal area.</figcaption>
+    <figcaption>Console â€” enter a command in the bottom field and read the simulator's response in the terminal area.</figcaption>
   </figure>
   <ul>
     <li><strong>Output panel:</strong> read the welcome/help text and the results of commands. It is read-only; you cannot type into it.</li>
@@ -370,11 +370,11 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
 </section>
 
 <section class="page screen-page">
-  <h2>Screen 9 of 10 · Reports</h2>
+  <h2>Screen 9 of 10 Â· Reports</h2>
   <p>Reports summarizes what happened and provides exportable records of the mission.</p>
   <figure class="figure">
     <img src="screenshots/guide-reports-dark.png" alt="Dark Mission theme screenshot of the OrbitalX Reports preview, mission grade, achievements, and export buttons">
-    <figcaption>Reports — inspect the live or completed mission summary, score, action counts, event history, and achievements.</figcaption>
+    <figcaption>Reports â€” inspect the live or completed mission summary, score, action counts, event history, and achievements.</figcaption>
   </figure>
   <ul>
     <li><strong>HTML REPORT PREVIEW:</strong> read the generated report in the scrollable preview pane. It is not an editor.</li>
@@ -386,11 +386,11 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
 </section>
 
 <section class="page screen-page">
-  <h2>Screen 10 of 10 · Settings</h2>
+  <h2>Screen 10 of 10 Â· Settings</h2>
   <p>Settings contains display, audio, animation, and accessibility preferences. Preferences persist across application restarts.</p>
   <figure class="figure">
     <img src="screenshots/guide-settings-dark.png" alt="Dark Mission theme screenshot of OrbitalX Settings with theme, sound, effects, FPS, animation quality, UI scale, and volume">
-    <figcaption>Settings — choose a theme and adjust available presentation and audio preferences.</figcaption>
+    <figcaption>Settings â€” choose a theme and adjust available presentation and audio preferences.</figcaption>
   </figure>
   <ul>
     <li><strong>Color Theme:</strong> select the theme from the list. THEME in the top bar also cycles themes.</li>
@@ -428,7 +428,7 @@ hr { border: 0; border-top: 1px solid #31445b; margin: 18pt 0; }
     <tr><td>TIMED_AUTOPILOT</td><td>The autopilot waits for the response window before performing eligible costly actions; a human can intervene.</td></tr>
     <tr><td>FULL_AUTO</td><td>The autopilot handles eligible recommendations immediately; it may assign work to a suitable crew member.</td></tr>
   </table>
-  <p>Self-Heal is a separate setting from Autonomy. It handles safe actions—repairs that avoid fuel or limited supplies and do not override the operator. Turning it off disables automatic self-healing but does not itself switch the autonomy mode. If an automatic repair fails repeatedly or cannot safely handle a problem, it can be escalated for human attention.</p>
+  <p>Self-Heal is a separate setting from Autonomy. It handles safe actionsâ€”repairs that avoid fuel or limited supplies and do not override the operator. Turning it off disables automatic self-healing but does not itself switch the autonomy mode. If an automatic repair fails repeatedly or cannot safely handle a problem, it can be escalated for human attention.</p>
   <div class="warning"><strong>Watch for costly actions.</strong> Evasive maneuvers and course corrections consume fuel; sealing a breach uses sealant. Preview recommendations when you are unsure, and check remaining resources before executing.</div>
 </section>
 
@@ -504,7 +504,7 @@ quit</pre>
   <table>
     <tr><th>Shortcut</th><th>Action</th></tr>
     <tr><td>0</td><td>Open Planner.</td></tr>
-    <tr><td>1–8</td><td>Open Dashboard, Cutaway, Orbit, Systems, Crew, Replay, Console, or Reports, respectively.</td></tr>
+    <tr><td>1â€“8</td><td>Open Dashboard, Cutaway, Orbit, Systems, Crew, Replay, Console, or Reports, respectively.</td></tr>
     <tr><td>9</td><td>Open Settings.</td></tr>
     <tr><td>Space</td><td>Start or pause mission ticking.</td></tr>
     <tr><td>Ctrl+K</td><td>Open Console and focus the command field.</td></tr>
@@ -512,15 +512,15 @@ quit</pre>
     <tr><td>F11</td><td>Toggle full-screen mode.</td></tr>
     <tr><td>Escape</td><td>Clear the command field.</td></tr>
   </table>
-  <p class="small">The little numbers printed beside the left-rail names use a different mapping: Planner shows 1, Dashboard 2, …, Reports 9, and Settings 0. For the keyboard, use the mapping above; clicking a name avoids the mismatch.</p>
+  <p class="small">The little numbers printed beside the left-rail names use a different mapping: Planner shows 1, Dashboard 2, â€¦, Reports 9, and Settings 0. For the keyboard, use the mapping above; clicking a name avoids the mismatch.</p>
   <h3>Where files go</h3>
   <ul>
-    <li><code>out\mission-report.html</code> — report exported from the application.</li>
-    <li><code>out\telemetry.csv</code> — comma-separated telemetry suitable for spreadsheet software.</li>
-    <li><code>out\mission-events.log</code> — events recorded while using the CLI.</li>
-    <li><code>docs\sample-mission-report.html</code> — included example report from a completed mission.</li>
-    <li><code>out\screenshots\</code> — screenshot matrix created by <code>Ctrl+S</code> or <code>--screenshots</code>.</li>
-    <li><code>docs\screenshots\</code> — representative screenshots included with the project.</li>
+    <li><code>out\mission-report.html</code> â€” report exported from the application.</li>
+    <li><code>out\telemetry.csv</code> â€” comma-separated telemetry suitable for spreadsheet software.</li>
+    <li><code>out\mission-events.log</code> â€” events recorded while using the CLI.</li>
+    <li><code>docs\sample-mission-report.html</code> â€” included example report from a completed mission.</li>
+    <li><code>out\screenshots\</code> â€” screenshot matrix created by <code>Ctrl+S</code> or <code>--screenshots</code>.</li>
+    <li><code>docs\screenshots\</code> â€” representative screenshots included with the project.</li>
   </ul>
   <h3>Common problems</h3>
   <table>
@@ -528,7 +528,7 @@ quit</pre>
     <tr><td><code>javac is not recognized</code></td><td>Install JDK 17+ (not just a runtime), add its <code>bin</code> directory to PATH, then close and reopen PowerShell.</td></tr>
     <tr><td><code>.\run.bat is not recognized</code></td><td>Change directory to the project root (the folder containing <code>run.bat</code>) and try again.</td></tr>
     <tr><td>The CLI exits after an error</td><td>Current builds print most invalid-command errors and keep running. Update to the latest repository branch if your copy predates the CLI fix.</td></tr>
-    <tr><td>The GUI is too large or clipped</td><td>The desktop window requires a usable area of at least about 1280×800. Maximize the window and check display scaling.</td></tr>
+    <tr><td>The GUI is too large or clipped</td><td>The desktop window requires a usable area of at least about 1280Ã—800. Maximize the window and check display scaling.</td></tr>
     <tr><td>Nothing seems to happen</td><td>Check that the mission is running (top LAUNCH control or Space). Use status on the Console view to see the tick and mission state.</td></tr>
     <tr><td>Commands seem to arrive late</td><td>Uplink delay may be enabled. Turn it off for immediate commands, or inspect the comms indicator and queued commands.</td></tr>
     <tr><td>The report looks unfinished</td><td>A live mission report describes the current state. Let a mission complete to see a final outcome and grade.</td></tr>
@@ -539,7 +539,7 @@ quit</pre>
 
 <section class="page" id="oop-feature">
   <h2>8. How OOP powers a real OrbitalX feature</h2>
-  <p>Follow one actual user-facing feature: the Dashboard displays a fuel recommendation, the operator previews or executes it, and OrbitalX reduces the spacecraft's throttle. These steps happen because specific objects collaborate—not because the program merely defines classes with OOP-sounding names.</p>
+  <p>Follow one actual user-facing feature: the Dashboard displays a fuel recommendation, the operator previews or executes it, and OrbitalX reduces the spacecraft's throttle. These steps happen because specific objects collaborateâ€”not because the program merely defines classes with OOP-sounding names.</p>
   <figure class="figure">
     <img src="screenshots/guide-dashboard-dark.png" alt="OrbitalX Dashboard showing live gauges and a fuel-margin recommendation with Preview Execute and Dismiss controls">
     <figcaption>The Dashboard used in this walkthrough. Its recommendation buttons call the simulation API; they do not directly modify spacecraft fields.</figcaption>
@@ -569,7 +569,7 @@ quit</pre>
     <li><strong>Name the OOP ideas with evidence.</strong> Interface-based abstraction: <code>SimulationController</code>. Polymorphism: the engine calls rule/action implementations through shared types. Composition: the spacecraft contains resources, subsystems, and crew. Encapsulation: the view uses snapshots and controller methods rather than editing private model state.</li>
     <li><strong>Show the result.</strong> Return to Dashboard or Systems and point out that the view refreshes from the updated snapshot. The same mission state is also available to reports.</li>
   </ol>
-  <p>This demonstration answers “where is OOP used?” with one end-to-end feature. It is not necessary to memorize definitions: explain what each named object does and why the objects cooperate.</p>
+  <p>This demonstration answers â€œwhere is OOP used?â€ with one end-to-end feature. It is not necessary to memorize definitions: explain what each named object does and why the objects cooperate.</p>
 </section>
 
 <section class="page" id="oop-map">
@@ -609,7 +609,7 @@ return success("Throttle reduced to " + permitted + "%");</pre>
   <p>The other major features use the same object-collaboration approach. These are not theoretical examples: they are the classes the mission engine uses.</p>
   <table>
     <tr><th>Feature in OrbitalX</th><th>How the actual objects work together</th></tr>
-    <tr><td><strong>Manual / timed / full autonomy</strong></td><td><code>AutopilotController</code> selects a concrete <code>AutonomyPolicy</code> for the selected mode and submits a <code>ResponseContext</code> to <code>SelfHealingHandler → AutopilotHandler → CrewHandler → EscalationHandler</code>. A handler either handles the recommendation or passes it to the next.</td></tr>
+    <tr><td><strong>Manual / timed / full autonomy</strong></td><td><code>AutopilotController</code> selects a concrete <code>AutonomyPolicy</code> for the selected mode and submits a <code>ResponseContext</code> to <code>SelfHealingHandler â†’ AutopilotHandler â†’ CrewHandler â†’ EscalationHandler</code>. A handler either handles the recommendation or passes it to the next.</td></tr>
     <tr><td><strong>Recommendations and actions</strong></td><td>A recommendation rule associates a condition with a concrete <code>CorrectiveAction</code>. The action exposes its ID, explanation, risk, and execution behavior, enabling the UI to show Preview / Execute / Dismiss.</td></tr>
     <tr><td><strong>Mission updates</strong></td><td><code>SimulationEngine</code> notifies tick listeners with snapshots and publishes typed events through <code>EventBus</code>. GUI views, logs, and listeners respond without each being hard-wired into the physics update.</td></tr>
     <tr><td><strong>Replay and what-if preview</strong></td><td>The engine records immutable <code>SimulationSnapshot</code> values in history. A forked controller wraps a copied engine, allowing preview work to stay separate from the live run.</td></tr>
@@ -617,12 +617,12 @@ return success("Throttle reduced to " + permitted + "%");</pre>
   </table>
   <h3>Useful project files for a presentation</h3>
   <ul>
-    <li><code>simulation/SimulationEngine.java</code> — mission tick, service composition, advice, execution, and snapshots.</li>
-    <li><code>model/Spacecraft.java</code>, <code>model/Subsystem.java</code>, <code>resource/Resource.java</code> — composition and protected mission state.</li>
-    <li><code>sensor/Sensor.java</code>, <code>detection/DetectionEngine.java</code>, <code>advisor/AdvisorEngine.java</code> — interfaces and runtime polymorphism.</li>
-    <li><code>advisor/FuelLowRule.java</code>, <code>action/ReduceThrottleAction.java</code> — one concrete recommendation and its concrete action.</li>
-    <li><code>api/SimulationController.java</code>, <code>simulation/DefaultSimulationController.java</code>, <code>gui/MissionView.java</code> — the UI-to-engine boundary.</li>
-    <li><code>report/MissionReport.java</code>, <code>report/HtmlReportVisitor.java</code>, <code>report/CsvVisitor.java</code> — report objects and alternate formats.</li>
+    <li><code>simulation/SimulationEngine.java</code> â€” mission tick, service composition, advice, execution, and snapshots.</li>
+    <li><code>model/Spacecraft.java</code>, <code>model/Subsystem.java</code>, <code>resource/Resource.java</code> â€” composition and protected mission state.</li>
+    <li><code>sensor/Sensor.java</code>, <code>detection/DetectionEngine.java</code>, <code>advisor/AdvisorEngine.java</code> â€” interfaces and runtime polymorphism.</li>
+    <li><code>advisor/FuelLowRule.java</code>, <code>action/ReduceThrottleAction.java</code> â€” one concrete recommendation and its concrete action.</li>
+    <li><code>api/SimulationController.java</code>, <code>simulation/DefaultSimulationController.java</code>, <code>gui/MissionView.java</code> â€” the UI-to-engine boundary.</li>
+    <li><code>report/MissionReport.java</code>, <code>report/HtmlReportVisitor.java</code>, <code>report/CsvVisitor.java</code> â€” report objects and alternate formats.</li>
   </ul>
   <p class="small">The companion <code>docs\OOP_CONCEPT_MAP.md</code> and class diagrams in <code>docs\puml\</code> provide more implementation references. OrbitalX uses explicit switches for some finite choices; the design uses polymorphism where interchangeable behavior is useful.</p>
 </section>
@@ -642,8 +642,9 @@ return success("Throttle reduced to " + permitted + "%");</pre>
   </ol>
   <p>In code, <code>SystemsView extends MissionView</code>, <code>MissionView extends View</code>, and <code>View implements TickListener</code>. The screenshot therefore demonstrates inheritance and interface-based updates, while the displayed data comes from composed model objects through encapsulated snapshots.</p>
   <p class="small">Explore <code>gui/SystemsView.java</code>, <code>gui/MissionView.java</code>, <code>gui/core/View.java</code>, <code>simulation/SimulationEngine.java</code>, <code>model/Spacecraft.java</code>, and <code>api/SubsystemSnapshot.java</code> to follow this feature from model to screen.</p>
-  <div class="tip"><strong>That is enough to get started.</strong> Begin with Free Flight, learn the Dashboard, then explore one fault at a time. Use Preview when available, and treat recommendations as explanations you can learn from—not as a requirement to automate every decision.</div>
+  <div class="tip"><strong>That is enough to get started.</strong> Begin with Free Flight, learn the Dashboard, then explore one fault at a time. Use Preview when available, and treat recommendations as explanations you can learn fromâ€”not as a requirement to automate every decision.</div>
   <p class="small">OrbitalX is a Java educational simulation. It does not connect to, control, or provide advice for any real spacecraft.</p>
 </section>
 </body>
 </html>
+

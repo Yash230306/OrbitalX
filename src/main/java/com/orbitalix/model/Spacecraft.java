@@ -65,7 +65,7 @@ public final class Spacecraft implements SystemComponent, FaultTarget, Copyable<
                 new LifeSupportSubsystem(this), new NavigationSubsystem(this), new ComputerSubsystem(this)));
     }
 
-    @Override public String name() { return "OrbitalIX Spacecraft"; }
+    @Override public String name() { return "OrbitalX Spacecraft"; }
     public MissionConfig config() { return config; }
     public OperatingLimits limits() { return limits; }
     public FuelTank fuelTank() { return fuel; }

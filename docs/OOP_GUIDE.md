@@ -1,9 +1,9 @@
 # OrbitalX: Comprehensive Object-Oriented Programming (OOP) Architectural Guide
 
 > **Official Deliverables**:
-> - 📄 **Complete Printable OOP Guide (PDF, 28 pages)**: [`docs/OrbitalX_OOP_Guide.pdf`](OrbitalX_OOP_Guide.pdf)
-> - 🌐 **Interactive Standalone Guide (HTML)**: [`docs/OrbitalX_OOP_Guide.html`](OrbitalX_OOP_Guide.html)
-> - 🗺️ **Concept Traceability Map**: [`docs/OOP_CONCEPT_MAP.md`](OOP_CONCEPT_MAP.md)
+> - 📄 **Complete Printable OOP Guide (PDF, 28 pages)**: [`docs/OOP_GUIDE.pdf`](OOP_GUIDE.pdf)
+> - 🌐 **Interactive Standalone Guide (HTML)**: [`docs/OOP_GUIDE.html`](OOP_GUIDE.html)
+> - 📘 **Companion Flight Operations Manual**: [`docs/USER_GUIDE.md`](USER_GUIDE.md) | [PDF](USER_GUIDE.pdf)
 >
 > **Core Mission**: OrbitalX is designed from first principles as an aerospace mission-control simulator demonstrating how enterprise-grade Object-Oriented Programming (OOP), SOLID design principles, and classical GoF Design Patterns model complex, deterministic, distributed mission-critical avionics in pure Java 17.
 
@@ -35,9 +35,10 @@ c:\Users\Bharat Upadhyay\OneDrive\Desktop\OrbitalX\
 ├── compile.bat / compile.sh              # Headless zero-dependency Java 17 compilation
 ├── run.bat / run.sh                      # Unified runtime launcher (GUI, CLI, SelfTest)
 ├── docs/                                 # Technical documentation & architectural diagrams
-│   ├── ARCHITECTURE.md                  # High-level architecture summary
-│   ├── OOP_GUIDE.md                     # This comprehensive OOP guide
-│   ├── OOP_CONCEPT_MAP.md               # Quick concept-to-file traceability map
+│   ├── USER_GUIDE.md                    # Flight Operations Manual (How to use it)
+│   ├── USER_GUIDE.pdf                   # Printable User Guide PDF
+│   ├── OOP_GUIDE.md                     # Comprehensive OOP Principles Guide
+│   ├── OOP_GUIDE.pdf                    # Printable OOP Guide PDF (28 pages)
 │   ├── puml/                            # PlantUML domain diagrams
 │   └── screenshots/                     # UI verification captures across themes
 └── src/main/java/com/orbitalix/

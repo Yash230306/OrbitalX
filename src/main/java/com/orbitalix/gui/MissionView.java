@@ -499,7 +499,7 @@ public class MissionView extends View {
     private void drawConsole(Graphics2D g, int w, int h) {
         card(g, 28, 84, w - 56, h - 112);
         label(g, "ONBOARD COMMAND TERMINAL", 50, 116, theme.accent());
-        String[] lines = {"ORBITALIX FLIGHT COMPUTER / CORE LINK ESTABLISHED",
+        String[] lines = {"ORBITALX FLIGHT COMPUTER / CORE LINK ESTABLISHED",
                 "Commands: help status throttle inject autonomy heal limits crew scenario seek report",
                 "> " + snapshot.spacecraftState() + "  fuel " + number(snapshot.resources().get(0).level())
                         + "  battery " + number(snapshot.resources().get(2).level())};

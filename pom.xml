@@ -8,7 +8,7 @@
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>OrbitalX - Spacecraft Mission Control System</name>
+    <name>OrbitalX - Space Mission Simulator</name>
     <description>Aerospace telemetry, fault diagnosis, autonomous recovery, and 3D visualization mission-control simulator written in pure Java 17.</description>
 
     <properties>

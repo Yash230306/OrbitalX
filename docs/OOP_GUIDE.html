@@ -1,8 +1,8 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>OrbitalX — Comprehensive Object-Oriented Programming (OOP) Guide</title>
+<title>OrbitalX â€” Comprehensive Object-Oriented Programming (OOP) Guide</title>
 <style>
 @page {
   size: Letter;
@@ -396,7 +396,7 @@ pre {
     <div style="background: #111d2e; border: 1px solid #203550; padding: 8pt 10pt; border-radius: 4pt;">
       <h4 style="margin-top: 0;">2. Component Integration</h4>
       <p style="font-size: 8.5pt;">
-        The spacecraft is assembled from discrete hardware components: main and backup rocket engines, multi-chamber fuel tanks with isolated reserve supplies, battery arrays, photovoltaic solar wings, and CO₂ scrubbers.
+        The spacecraft is assembled from discrete hardware components: main and backup rocket engines, multi-chamber fuel tanks with isolated reserve supplies, battery arrays, photovoltaic solar wings, and COâ‚‚ scrubbers.
       </p>
     </div>
 
@@ -492,9 +492,9 @@ pre {
 
   <p><span class="step-num">7</span> <strong>Code explanation line by line:</strong></p>
   <table class="line-table">
-    <tr><td>Lines 1–6</td><td>Defines the class <code>Spacecraft</code> as a blueprint with private fields (<code>config</code>, <code>fuel</code>, <code>throttle</code>, <code>speed</code>). Every instantiated object gets its own copy of these variables.</td></tr>
-    <tr><td>Lines 8–12</td><td>The <code>Constructor</code>. When <code>new Spacecraft(config)</code> is invoked, Java allocates memory for a new object, binds the configuration, and creates an attached <code>FuelTank</code> object.</td></tr>
-    <tr><td>Lines 14–20</td><td>The <code>setThrottle</code> method. Defines behavior that operates directly on the object's instance variable (<code>this.throttle = value</code>) while enforcing valid operational constraints.</td></tr>
+    <tr><td>Lines 1â€“6</td><td>Defines the class <code>Spacecraft</code> as a blueprint with private fields (<code>config</code>, <code>fuel</code>, <code>throttle</code>, <code>speed</code>). Every instantiated object gets its own copy of these variables.</td></tr>
+    <tr><td>Lines 8â€“12</td><td>The <code>Constructor</code>. When <code>new Spacecraft(config)</code> is invoked, Java allocates memory for a new object, binds the configuration, and creates an attached <code>FuelTank</code> object.</td></tr>
+    <tr><td>Lines 14â€“20</td><td>The <code>setThrottle</code> method. Defines behavior that operates directly on the object's instance variable (<code>this.throttle = value</code>) while enforcing valid operational constraints.</td></tr>
   </table>
 
   <p><span class="step-num">8</span> <strong>How the classes interact:</strong><br>
@@ -552,9 +552,9 @@ pre {
 
   <p><span class="step-num">7</span> <strong>Code explanation line by line:</strong></p>
   <table class="line-table">
-    <tr><td>Lines 2–4</td><td>Declares <code>capacity</code> as <code>final</code> (immutable once constructed) and <code>level</code> as <code>private</code>. No external class can write <code>fuelTank.level = 0</code>.</td></tr>
-    <tr><td>Lines 6–7</td><td>Public getter <code>level()</code> provides read-only visibility into current reserves. Marked <code>synchronized</code> to ensure thread safety across UI and simulation threads.</td></tr>
-    <tr><td>Lines 9–17</td><td>The <code>consume()</code> method validates that the requested amount is a finite, positive number. It clamps the deduction using <code>Math.min(amount, level)</code> so fuel can never become negative.</td></tr>
+    <tr><td>Lines 2â€“4</td><td>Declares <code>capacity</code> as <code>final</code> (immutable once constructed) and <code>level</code> as <code>private</code>. No external class can write <code>fuelTank.level = 0</code>.</td></tr>
+    <tr><td>Lines 6â€“7</td><td>Public getter <code>level()</code> provides read-only visibility into current reserves. Marked <code>synchronized</code> to ensure thread safety across UI and simulation threads.</td></tr>
+    <tr><td>Lines 9â€“17</td><td>The <code>consume()</code> method validates that the requested amount is a finite, positive number. It clamps the deduction using <code>Math.min(amount, level)</code> so fuel can never become negative.</td></tr>
   </table>
 
   <p><span class="step-num">8</span> <strong>How the classes interact:</strong><br>
@@ -609,9 +609,9 @@ pre {
 
   <p><span class="step-num">7</span> <strong>Code explanation line by line:</strong></p>
   <table class="line-table">
-    <tr><td>Lines 1–4</td><td>Declares <code>Subsystem</code> as an <code>abstract class</code>. It cannot be directly instantiated with <code>new Subsystem()</code> because an abstract subsystem does not have specific physical behavior.</td></tr>
-    <tr><td>Lines 6–8</td><td>The abstract method <code>applyPhysics(...)</code>. It declares a behavioral contract with no body, mandating that any subclass (such as propulsion or thermal) must provide its own specific physics formulas.</td></tr>
-    <tr><td>Lines 10–14</td><td>The public concrete method <code>tick(...)</code>. This is the simple operation exposed to the outside world. Any caller simply calls <code>subsystem.tick(craft, env)</code> without needing to understand the underlying physics.</td></tr>
+    <tr><td>Lines 1â€“4</td><td>Declares <code>Subsystem</code> as an <code>abstract class</code>. It cannot be directly instantiated with <code>new Subsystem()</code> because an abstract subsystem does not have specific physical behavior.</td></tr>
+    <tr><td>Lines 6â€“8</td><td>The abstract method <code>applyPhysics(...)</code>. It declares a behavioral contract with no body, mandating that any subclass (such as propulsion or thermal) must provide its own specific physics formulas.</td></tr>
+    <tr><td>Lines 10â€“14</td><td>The public concrete method <code>tick(...)</code>. This is the simple operation exposed to the outside world. Any caller simply calls <code>subsystem.tick(craft, env)</code> without needing to understand the underlying physics.</td></tr>
   </table>
 
   <p><span class="step-num">8</span> <strong>How the classes interact:</strong><br>
@@ -675,8 +675,8 @@ pre {
   <p><span class="step-num">7</span> <strong>Code explanation line by line:</strong></p>
   <table class="line-table">
     <tr><td>Line 2</td><td>The keyword <code>extends Subsystem</code> establishes that <code>PropulsionSubsystem</code> <strong>IS-A</strong> <code>Subsystem</code>. It inherits all fields and methods from <code>Subsystem</code>.</td></tr>
-    <tr><td>Lines 4–7</td><td>The <code>super(...)</code> statement delegates to the parent constructor, reusing the parent's sensor list registration and health tracking code.</td></tr>
-    <tr><td>Lines 9–17</td><td>The <code>@Override</code> annotation indicates that <code>applyPhysics</code> specializes the abstract method defined in the parent class, implementing specific rocket fuel burn equations.</td></tr>
+    <tr><td>Lines 4â€“7</td><td>The <code>super(...)</code> statement delegates to the parent constructor, reusing the parent's sensor list registration and health tracking code.</td></tr>
+    <tr><td>Lines 9â€“17</td><td>The <code>@Override</code> annotation indicates that <code>applyPhysics</code> specializes the abstract method defined in the parent class, implementing specific rocket fuel burn equations.</td></tr>
   </table>
 
   <p><span class="step-num">8</span> <strong>How the classes interact:</strong><br>
@@ -732,8 +732,8 @@ pre {
 
   <p><span class="step-num">7</span> <strong>Code explanation line by line:</strong></p>
   <table class="line-table">
-    <tr><td>Lines 2–7</td><td>The loop iterates through <code>this.subsystems</code> using the base type reference <code>Subsystem</code>. At runtime, the JVM inspects the actual object type in memory and dispatches the call to the appropriate child class method (Dynamic Method Dispatch).</td></tr>
-    <tr><td>Lines 10–15</td><td>Demonstrates <strong>Method Overloading</strong>. Two constructors exist with the same name (<code>FuelTank</code>) but different parameter signatures, allowing callers flexibility during object initialization.</td></tr>
+    <tr><td>Lines 2â€“7</td><td>The loop iterates through <code>this.subsystems</code> using the base type reference <code>Subsystem</code>. At runtime, the JVM inspects the actual object type in memory and dispatches the call to the appropriate child class method (Dynamic Method Dispatch).</td></tr>
+    <tr><td>Lines 10â€“15</td><td>Demonstrates <strong>Method Overloading</strong>. Two constructors exist with the same name (<code>FuelTank</code>) but different parameter signatures, allowing callers flexibility during object initialization.</td></tr>
   </table>
 
   <p><span class="step-num">8</span> <strong>How the classes interact:</strong><br>
@@ -822,8 +822,8 @@ pre {
 
   <p><span class="step-num">7</span> <strong>Code explanation line by line:</strong></p>
   <table class="line-table">
-    <tr><td>Lines 3–6</td><td><code>private final FuelTank fuel</code> demonstrates <strong>Composition</strong>: the field is final and private. <code>private CrewRoster crewRoster</code> demonstrates <strong>Aggregation</strong>: the roster can be modified, cleared, or populated with astronauts from outside.</td></tr>
-    <tr><td>Lines 8–12</td><td>In the constructor, <code>this.fuel = new FuelTank(...)</code> binds the lifecycle of the fuel tank to this specific spacecraft instance. If the craft is garbage collected, its tank is collected.</td></tr>
+    <tr><td>Lines 3â€“6</td><td><code>private final FuelTank fuel</code> demonstrates <strong>Composition</strong>: the field is final and private. <code>private CrewRoster crewRoster</code> demonstrates <strong>Aggregation</strong>: the roster can be modified, cleared, or populated with astronauts from outside.</td></tr>
+    <tr><td>Lines 8â€“12</td><td>In the constructor, <code>this.fuel = new FuelTank(...)</code> binds the lifecycle of the fuel tank to this specific spacecraft instance. If the craft is garbage collected, its tank is collected.</td></tr>
   </table>
 
   <p><span class="step-num">8</span> <strong>How the classes interact:</strong><br>
@@ -916,9 +916,9 @@ pre {
 
   <p><span class="step-num">7</span> <strong>Code explanation line by line:</strong></p>
   <table class="line-table">
-    <tr><td>Lines 2–6</td><td><code>Sensor</code> is an interface declaring the methods <code>read()</code> and <code>unit()</code>. It contains no state variables.</td></tr>
-    <tr><td>Lines 9–14</td><td><code>BaseSensor</code> implements <code>Sensor</code>. It introduces state (<code>id</code> and a 60-sample <code>RingBuffer</code>) that all sensors share.</td></tr>
-    <tr><td>Lines 16–22</td><td>Implements the Template Method pattern: <code>read()</code> handles history tracking and delegates to <code>sampleRaw()</code>.</td></tr>
+    <tr><td>Lines 2â€“6</td><td><code>Sensor</code> is an interface declaring the methods <code>read()</code> and <code>unit()</code>. It contains no state variables.</td></tr>
+    <tr><td>Lines 9â€“14</td><td><code>BaseSensor</code> implements <code>Sensor</code>. It introduces state (<code>id</code> and a 60-sample <code>RingBuffer</code>) that all sensors share.</td></tr>
+    <tr><td>Lines 16â€“22</td><td>Implements the Template Method pattern: <code>read()</code> handles history tracking and delegates to <code>sampleRaw()</code>.</td></tr>
     <tr><td>Line 25</td><td><code>sampleRaw()</code> is declared abstract, compelling subclasses (like <code>TemperatureSensor</code>) to provide the actual telemetry measurement logic.</td></tr>
   </table>
 
@@ -1128,39 +1128,39 @@ pre {
 
   <h3>5.1 Maven Project Structure</h3>
   <pre>OrbitalX/
-├── pom.xml                               # Standard Maven build descriptor (Java 17 target)
-├── compile.bat / compile.sh              # Headless JDK compilation scripts
-├── run.bat / run.sh                      # Universal application launchers (GUI, CLI, SelfTest)
-├── docs/                                 # Architectural manuals, diagrams, and PDF guides
-│   ├── OOP_GUIDE.md                      # Comprehensive markdown OOP guide
-│   ├── ARCHITECTURE.md                   # System design overview
-│   └── OrbitalX_OOP_Guide.pdf            # This printable PDF manual
-└── src/main/java/com/orbitalix/          # Modular Java 17 source tree
-    ├── action/                           # Command Pattern: Executable corrective actions
-    ├── advisor/                          # Diagnostic rules and advisory recommendation engine
-    ├── alert/                            # Event publisher/subscriber notification classes
-    ├── api/                              # Public Boundary: Interfaces, immutable Records, enums
-    ├── app/                              # Application bootstrap and entry point (Main.java)
-    ├── autonomy/                         # Chain of Responsibility: Autopilot & recovery handlers
-    ├── comms/                            # Strategy Pattern: Direct and speed-of-light radio delay
-    ├── config/                           # Factory & Builder: Spacecraft specs and destinations
-    ├── console/                          # CLI command registry and terminal parser
-    ├── crew/                             # Composite & Role Hierarchy: Astronauts and tasks
-    ├── detection/                        # Strategy Pattern: Real-time telemetry anomaly detectors
-    ├── event/                            # Observer Pattern: Strongly-typed EventBus pub/sub
-    ├── exception/                        # Domain Exception Hierarchy: Checked & unchecked faults
-    ├── gui/                              # Presentation Layer: Custom Java2D HUD consoles
-    │   ├── render3d/                     # Software 3D rasterizer, camera, matrix, and meshes
-    │   └── theme/                        # Strategy / Flyweight: 4 High-contrast mission themes
-    ├── model/                            # Core Domain Model: Spacecraft, Subsystems, Limits
-    ├── replay/                           # Memento Pattern: Historical state ring buffer & scrubber
-    ├── report/                           # Visitor Pattern: HTML5, CSV, and ASCII report writers
-    ├── resource/                         # Encapsulated Consumables: FuelTank, Battery, Oxygen
-    ├── scoring/                          # Specification Pattern: Mission grades & achievements
-    ├── sensor/                           # Decorator Pattern: Sensors, noise, drift, spikes
-    ├── simulation/                       # Facade Pattern: SimulationEngine & DefaultController
-    ├── state/                            # State Pattern: Spacecraft operational lifecycle states
-    └── util/                             # Generic utilities: RingBuffer, Clock, Random</pre>
+â”œâ”€â”€ pom.xml                               # Standard Maven build descriptor (Java 17 target)
+â”œâ”€â”€ compile.bat / compile.sh              # Headless JDK compilation scripts
+â”œâ”€â”€ run.bat / run.sh                      # Universal application launchers (GUI, CLI, SelfTest)
+â”œâ”€â”€ docs/                                 # Architectural manuals, diagrams, and PDF guides
+â”‚   â”œâ”€â”€ OOP_GUIDE.md                      # Comprehensive markdown OOP guide
+â”‚   â”œâ”€â”€ ARCHITECTURE.md                   # System design overview
+â”‚   â””â”€â”€ OOP_GUIDE.pdf            # This printable PDF manual
+â””â”€â”€ src/main/java/com/orbitalix/          # Modular Java 17 source tree
+    â”œâ”€â”€ action/                           # Command Pattern: Executable corrective actions
+    â”œâ”€â”€ advisor/                          # Diagnostic rules and advisory recommendation engine
+    â”œâ”€â”€ alert/                            # Event publisher/subscriber notification classes
+    â”œâ”€â”€ api/                              # Public Boundary: Interfaces, immutable Records, enums
+    â”œâ”€â”€ app/                              # Application bootstrap and entry point (Main.java)
+    â”œâ”€â”€ autonomy/                         # Chain of Responsibility: Autopilot & recovery handlers
+    â”œâ”€â”€ comms/                            # Strategy Pattern: Direct and speed-of-light radio delay
+    â”œâ”€â”€ config/                           # Factory & Builder: Spacecraft specs and destinations
+    â”œâ”€â”€ console/                          # CLI command registry and terminal parser
+    â”œâ”€â”€ crew/                             # Composite & Role Hierarchy: Astronauts and tasks
+    â”œâ”€â”€ detection/                        # Strategy Pattern: Real-time telemetry anomaly detectors
+    â”œâ”€â”€ event/                            # Observer Pattern: Strongly-typed EventBus pub/sub
+    â”œâ”€â”€ exception/                        # Domain Exception Hierarchy: Checked & unchecked faults
+    â”œâ”€â”€ gui/                              # Presentation Layer: Custom Java2D HUD consoles
+    â”‚   â”œâ”€â”€ render3d/                     # Software 3D rasterizer, camera, matrix, and meshes
+    â”‚   â””â”€â”€ theme/                        # Strategy / Flyweight: 4 High-contrast mission themes
+    â”œâ”€â”€ model/                            # Core Domain Model: Spacecraft, Subsystems, Limits
+    â”œâ”€â”€ replay/                           # Memento Pattern: Historical state ring buffer & scrubber
+    â”œâ”€â”€ report/                           # Visitor Pattern: HTML5, CSV, and ASCII report writers
+    â”œâ”€â”€ resource/                         # Encapsulated Consumables: FuelTank, Battery, Oxygen
+    â”œâ”€â”€ scoring/                          # Specification Pattern: Mission grades & achievements
+    â”œâ”€â”€ sensor/                           # Decorator Pattern: Sensors, noise, drift, spikes
+    â”œâ”€â”€ simulation/                       # Facade Pattern: SimulationEngine & DefaultController
+    â”œâ”€â”€ state/                            # State Pattern: Spacecraft operational lifecycle states
+    â””â”€â”€ util/                             # Generic utilities: RingBuffer, Clock, Random</pre>
 
   <h3>5.2 Deep Dive into the Ten Key Classes</h3>
 
@@ -1329,7 +1329,7 @@ pre {
     <li><strong>Implement a New Subsystem (Inheritance & Polymorphism):</strong> Create a new class <code>ShieldSubsystem extends Subsystem</code>. In <code>applyPhysics()</code>, draw 5% battery power each tick to reduce incoming radiation damage by 80%.</li>
     <li><strong>Add a New Sensor Decorator (Decorator Pattern):</strong> Implement <code>FaultySensorDecorator extends SensorDecorator</code> that intermittently returns <code>Double.NaN</code> to simulate telemetry transmission dropouts.</li>
     <li><strong>Create an Emergency Action (Command Pattern):</strong> Implement <code>EmergencyVentAction extends AbstractCorrectiveAction</code> that rapidly vents cabin pressure to extinguish an electrical cabin fire.</li>
-    <li><strong>Enforce a New Invariant (Encapsulation):</strong> Modify <code>OperatingLimits.java</code> to guarantee that <code>MAX_TEMPERATURE</code> can never be set above 150°C even under manual override mode.</li>
+    <li><strong>Enforce a New Invariant (Encapsulation):</strong> Modify <code>OperatingLimits.java</code> to guarantee that <code>MAX_TEMPERATURE</code> can never be set above 150Â°C even under manual override mode.</li>
     <li><strong>Design a JSON Report Visitor (Open/Closed Principle):</strong> Create <code>JsonReportVisitor implements ReportVisitor</code> to export full mission telemetry transcripts into structured JSON without altering <code>MissionReport.java</code>.</li>
   </ol>
 
@@ -1350,9 +1350,10 @@ pre {
   </div>
 
   <div style="text-align: center; margin-top: 30pt; color: #54dce9; font-size: 9pt;">
-    <strong>OrbitalX Mission Control</strong> · Educational Architecture Series · Pure Java 17
+    <strong>OrbitalX Mission Control</strong> Â· Educational Architecture Series Â· Pure Java 17
   </div>
 </section>
 
 </body>
 </html>
+

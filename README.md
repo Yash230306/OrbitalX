@@ -1,11 +1,23 @@
-# OrbitalX — Spacecraft Mission Control & Autonomous Recovery Suite
+# OrbitalX — Space Mission Simulator
 
 [![Java 17](https://img.shields.io/badge/Java-17%20LTS-orange.svg)](https://openjdk.org/projects/jdk/17/)
 [![Dependencies](https://img.shields.io/badge/Dependencies-Zero%20(Pure%20JavaSE)-blue.svg)](https://docs.oracle.com/en/java/javase/17/)
 [![GUI](https://img.shields.io/badge/GUI-Swing%20%2F%20Java2D-green.svg)](https://en.wikipedia.org/wiki/Swing_(Java))
-[![Architecture](https://img.shields.io/badge/Design-Object--Oriented-purple.svg)](docs/OOP_GUIDE.md)
+[![Documentation](https://img.shields.io/badge/Guides-User%20%26%20OOP-purple.svg)](#-official-documentation)
+[![Architecture](https://img.shields.io/badge/Design-Clean%20OOP%20%2B%20SOLID-cyan.svg)](docs/OOP_GUIDE.md)
 
-**OrbitalX** is a desktop aerospace mission-control simulator and autonomous recovery testbed built with pure Java 17. It models real-time spacecraft physics, environmental hazards, sensor streams, telemetry anomalies, autonomous recovery chains, crew interventions, and time-travel replay without external runtime dependencies.
+**OrbitalX** is an aerospace mission-control simulator, telemetry monitor, and autonomous recovery testbed built from scratch with pure Java 17. It models real-time spacecraft physics, environmental hazards, sensor streams, telemetry anomalies, autonomous recovery chains, crew interventions, and time-travel replay without external runtime dependencies.
+
+---
+
+## 📚 Official Documentation
+
+The project maintains **two comprehensive, self-contained guides**:
+
+| Guide | Description | Formats |
+| :--- | :--- | :--- |
+| 📘 **User Guide<br>(How to Use It)** | Complete flight operations manual: installation, first mission walkthrough, in-depth guide to all 10 cockpit screens, flight maneuvers, emergency recovery, keyboard shortcuts, and CLI commands. | [**Markdown**](docs/USER_GUIDE.md) · [**Printable PDF**](docs/USER_GUIDE.pdf) · [**HTML**](docs/USER_GUIDE.html) |
+| 🏛️ **OOP Principles Guide<br>(Software Architecture)** | Exhaustive 28-page Object-Oriented design guide: Classes & Objects, Encapsulation, Abstraction, Inheritance, Polymorphism, Relationships, Interfaces, SOLID principles (including an in-depth Dependency Inversion breakdown), layered architecture, and 12+ GoF patterns. | [**Markdown**](docs/OOP_GUIDE.md) · [**Printable PDF**](docs/OOP_GUIDE.pdf) · [**HTML**](docs/OOP_GUIDE.html) |
 
 ---
 
@@ -23,8 +35,8 @@
   8. **Avionics Console**: Aviation terminal with command history and Tab completion.
   9. **Reports**: Single-click export of HTML5 mission dossiers and CSV telemetry spreadsheets.
   10. **Settings**: On-the-fly theme switching (Dark Mission, Lunar Light, Retro Amber, Cyberpunk Neon) and autonomy tuning.
-* **Autonomous Resolution Chain**: Implements a four-tier Chain of Responsibility (`Self-Healing Circuits` → `Timed Autopilot` → `Crew Tasking` → `Ground Escalation`).
-* **Object-Oriented Excellence**: Implements 12+ GoF design patterns (State, Command, Observer, Strategy, Chain of Responsibility, Visitor, Memento, Decorator, Composite, Factory, Prototype, Facade). See [**`docs/OOP_GUIDE.md`**](docs/OOP_GUIDE.md).
+* **Autonomous Resolution Chain**: Implements a four-tier Chain of Responsibility (`Self-Healing Circuits` &rarr; `Timed Autopilot` &rarr; `Crew Tasking` &rarr; `Ground Escalation`).
+* **Object-Oriented Excellence**: Clean Layered Architecture with strict Dependency Inversion (GUI and physics communicate exclusively through the `SimulationController` abstraction).
 
 ---
 
@@ -32,23 +44,27 @@
 
 ```text
 OrbitalX/
-├── compile.bat                  # Windows compilation script
-├── run.bat                      # Windows launcher script
+├── pom.xml                      # Standard Maven build descriptor (Java 17 target)
+├── compile.bat                  # Windows zero-dependency compilation script
+├── run.bat                      # Windows unified runtime launcher
 ├── compile.sh                   # Linux/macOS compilation script
 ├── run.sh                       # Linux/macOS launcher script
-├── pom.xml                      # Standard Maven build descriptor
-├── docs/                        # Architecture guides, UML, screenshots, manuals
-│   ├── OOP_GUIDE.md             # Comprehensive OOP Architecture & Design Patterns Guide
-│   ├── OOP_CONCEPT_MAP.md       # Visual syllabus & pattern breakdown
-│   ├── ARCHITECTURE.md          # Subsystem design & component overview
-│   ├── BEGINNER_GUIDE.pdf       # Walkthrough manual with annotated cockpit diagrams
-│   ├── puml/                    # PlantUML sequence and class diagrams
+├── LICENSE                      # Project license (MIT)
+├── README.md                    # Project overview and quick start
+├── docs/                        # The Two Official Guides & Visual Assets
+│   ├── USER_GUIDE.md            # 📘 Guide 1: Complete User Operations Manual
+│   ├── USER_GUIDE.pdf           # 📄 Printable User Guide PDF (with cockpit screenshots)
+│   ├── USER_GUIDE.html          # 🌐 Interactive standalone User Guide
+│   ├── OOP_GUIDE.md             # 🏛️ Guide 2: Comprehensive OOP Principles & Architecture
+│   ├── OOP_GUIDE.pdf            # 📄 Printable 28-Page OOP Principles PDF
+│   ├── OOP_GUIDE.html           # 🌐 Interactive standalone OOP Guide
+│   ├── puml/                    # PlantUML domain diagrams
 │   └── screenshots/             # 80-image capture matrix of all views & themes
-└── src/main/java/com/orbitalix/ # Clean modular source tree
+└── src/main/java/com/orbitalix/ # Modular Java 17 source tree
     ├── action/                  # Command pattern: corrective actions
     ├── advisor/                 # Diagnostic rules and recommendation engine
     ├── alert/                   # Event notification & dispatch
-    ├── api/                     # Public contracts, records, and enums
+    ├── api/                     # Public contracts, records, and enums (MVC Boundary)
     ├── app/                     # Main entry points (GUI and CLI)
     ├── autonomy/                # Chain of Responsibility: autopilot & self-healing
     ├── comms/                   # Communication channels & speed-of-light uplink delay
@@ -92,9 +108,6 @@ OrbitalX/
 
 # Execute the automated Self-Test suite (108 scenario matrix)
 .\run.bat --selftest
-
-# Generate headless screenshots of all views in all themes
-.\run.bat --screenshots out\screenshots
 ```
 
 ### Build & Run on Linux / macOS
@@ -118,7 +131,7 @@ chmod +x *.sh
 ### Build with Apache Maven
 
 ```bash
-# Compile and package
+# Compile and package into a JAR
 mvn clean package
 
 # Run via Maven
@@ -131,11 +144,12 @@ mvn exec:java
 
 | Shortcut | Function | Description |
 | :--- | :--- | :--- |
-| `0` .. `9` | **Console Select** | Directly switches between the 10 navigation views |
+| `1` .. `0` | **Console Select** | Directly switches between the 10 navigation views |
 | `Space` | **Launch / Pause** | Toggles simulation clock execution |
+| `Up` / `Down` | **Throttle Control**| Adjusts main engine throttle up/down by 5% |
 | `Ctrl + K` | **Quick Command** | Focuses the command input field |
 | `Ctrl + S` | **Screenshot** | Captures the active viewport to `out/screenshots` |
-| `F11` | **Fullscreen** | Toggles borderless mission-control fullscreen mode |
+| `F` or `F11` | **Fullscreen** | Toggles borderless mission-control fullscreen mode |
 | `Escape` | **Cancel** | Clears active prompt or closes modal overlays |
 
 ---
@@ -165,12 +179,13 @@ quit                                 Exit console mode
 
 ---
 
-## Documentation
+## Verification & Self-Test
 
-- [**OOP Architecture Guide**](docs/OOP_GUIDE.md): In-depth 10-section breakdown of object-oriented principles, design patterns, and package topologies.
-- [**OOP Concept Map**](docs/OOP_CONCEPT_MAP.md): Detailed syllabus alignment and design pattern inventory.
-- [**Beginner's Flight Manual (PDF)**](docs/BEGINNER_GUIDE.pdf): Visual pilot's manual covering all displays, instruments, and procedures.
-- [**Architectural Overview**](docs/ARCHITECTURE.md): Component diagrams, state machines, and data flow pipelines.
+OrbitalX includes a deterministic headless test runner validating mathematical determinism, failure recovery survival, and view rendering across 108 test permutations:
+
+```powershell
+java -cp out com.orbitalix.app.Main --selftest
+```
 
 ---
 

@@ -62,7 +62,7 @@ public final class MainWindow extends JFrame {
     private MissionEventListener toastListener;
 
     public MainWindow(SimulationController controller) {
-        super("OrbitalIX | Mission Control");
+        super("OrbitalX — Space Mission Simulator");
         this.controller = controller;
         soundPlayer = SynthSoundPlayer.createDefault();
         effectsOverlay = new MissionEffectsOverlay(controller);
@@ -276,7 +276,7 @@ public final class MainWindow extends JFrame {
             JPanel brandPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
             brandPanel.setOpaque(false);
 
-            JLabel logo = new JLabel("ORBITALIX");
+            JLabel logo = new JLabel("ORBITALX");
             logo.setForeground(theme.accent());
             logo.setFont(new Font("Segoe UI", Font.BOLD, 17));
             brandPanel.add(logo);
