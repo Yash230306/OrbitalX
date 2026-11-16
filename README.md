@@ -189,6 +189,15 @@ java -cp out com.orbitalix.app.Main --selftest
 
 ---
 
+## Team Roles & Division of Responsibilities
+
+| Team Member | Project Role | Core Responsibilities & Deliverables |
+| :--- | :--- | :--- |
+| **Member A (Bharat)** | Lead Software Architect & Core Engine Developer | • Full Java 17 deterministic simulation engine & clock tick loop (Tasks A1–A7)<br>• 10 Desktop Mission Control cockpit consoles in Swing / Java2D (Tasks A8–A14)<br>• Real-time 3D spacecraft rasterizer with dual-source space lighting<br>• Four-tier autonomous recovery engine (Self-Healing, Autopilot, Crew, Ground)<br>• Automated 108-permutation regression & self-test suite (`--selftest`) (Tasks A15–A16) |
+| **Member B (Partner)** | Systems Analyst, QA & Technical Documentation Lead | • System requirements specification & UML modeling (`docs/puml/`) (Tasks B1–B3)<br>• Flight Operations Manual & User Guide ([`docs/USER_GUIDE.md`](docs/USER_GUIDE.md))<br>• Project Report & Architecture Presentation Slides (18-slide deck) (Tasks B5–B6)<br>• Viva examination Q&A preparation (40 technical architecture questions) (Task B7)<br>• Multi-environment verification testing on fresh machine clones (Task B8) |
+
+---
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
