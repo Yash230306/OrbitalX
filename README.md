@@ -3,8 +3,8 @@
 [![Java 17](https://img.shields.io/badge/Java-17%20LTS-orange.svg)](https://openjdk.org/projects/jdk/17/)
 [![Dependencies](https://img.shields.io/badge/Dependencies-Zero%20(Pure%20JavaSE)-blue.svg)](https://docs.oracle.com/en/java/javase/17/)
 [![GUI](https://img.shields.io/badge/GUI-Swing%20%2F%20Java2D-green.svg)](https://en.wikipedia.org/wiki/Swing_(Java))
-[![Documentation](https://img.shields.io/badge/Docs-Report%20%26%20Presentation-purple.svg)](#-official-documentation)
-[![Architecture](https://img.shields.io/badge/Design-Clean%20OOP%20%2B%20SOLID-cyan.svg)](docs/PROJECT_REPORT.md)
+[![Documentation](https://img.shields.io/badge/Documentation-User%20%26%20OOP%20Guides-purple.svg)](#-official-documentation)
+[![Architecture](https://img.shields.io/badge/Design-Clean%20OOP%20%2B%20SOLID-cyan.svg)](docs/OOP_GUIDE.md)
 
 **OrbitalX** is an aerospace mission-control simulator, telemetry monitor, and autonomous recovery testbed built from scratch with pure Java 17. It models real-time spacecraft physics, environmental hazards, sensor streams, telemetry anomalies, autonomous recovery chains, crew interventions, and time-travel replay without external runtime dependencies.
 
@@ -12,11 +12,13 @@
 
 ## 📚 Official Documentation
 
-The project includes the comprehensive **Project Report** and **Architecture Presentation**:
+The project maintains comprehensive documentation across technical architecture, operations, and academic deliverables:
 
-| Deliverable | Description | Formats |
+| Document | Description | Formats |
 | :--- | :--- | :--- |
-| 📄 **Project Report<br>(Group 39)** | Complete academic and technical report covering requirements, OOA/D, CRC cards, 4 pillars of OOP, class relationships, 14 UML models, SOLID principles, 16 GoF design patterns, exception handling, simulation loop, testing matrix (108/108 PASS), and appendices. | [**Printable PDF**](docs/Group_39-ProjectReport.pdf) · [**Markdown**](docs/PROJECT_REPORT.md) |
+| 📘 **User Operations Guide** | Complete flight operations manual: installation, first mission walkthrough, in-depth guide to all 10 cockpit screens, flight maneuvers, emergency recovery, keyboard shortcuts, and CLI commands. | [**Markdown**](docs/USER_GUIDE.md) · [**Printable PDF**](docs/USER_GUIDE.pdf) · [**HTML**](docs/USER_GUIDE.html) |
+| 🏛️ **OOP Principles Guide** | Exhaustive 28-page Object-Oriented design guide: Classes & Objects, Encapsulation, Abstraction, Inheritance, Polymorphism, Relationships, Interfaces, SOLID principles, layered architecture, and 12+ GoF patterns. | [**Markdown**](docs/OOP_GUIDE.md) · [**Printable PDF**](docs/OOP_GUIDE.pdf) · [**HTML**](docs/OOP_GUIDE.html) |
+| 📄 **Final Project Report<br>(Group 39)** | Complete academic and technical report covering requirements, OOA/D, CRC cards, 4 pillars of OOP, class relationships, 14 UML models, SOLID principles, 16 GoF design patterns, exception handling, simulation loop, testing matrix (108/108 PASS), and appendices. | [**Printable PDF**](docs/Group_39-ProjectReport.pdf) · [**Markdown**](docs/PROJECT_REPORT.md) |
 | 📊 **Presentation Slides<br>(Group 39)** | 32-slide presentation detailing system architecture, three-layer separation, Gang-of-Four design patterns, Chain of Responsibility, sensor decorators, state machines, headless testing, and UI showcase. | [**Printable PDF**](docs/Group_39-PPT.pdf) · [**Markdown**](docs/PRESENTATION.md) |
 
 ---
@@ -51,7 +53,13 @@ OrbitalX/
 ├── run.sh                       # Linux/macOS launcher script
 ├── LICENSE                      # Project license (MIT)
 ├── README.md                    # Project overview and quick start
-├── docs/                        # Official Project Deliverables & Visual Assets
+├── docs/                        # Complete Documentation, Guides & Visual Assets
+│   ├── USER_GUIDE.md            # 📘 Complete User Operations Manual
+│   ├── USER_GUIDE.pdf           # 📄 Printable User Guide PDF (with cockpit screenshots)
+│   ├── USER_GUIDE.html          # 🌐 Interactive standalone User Guide
+│   ├── OOP_GUIDE.md             # 🏛️ Comprehensive OOP Principles & Architecture
+│   ├── OOP_GUIDE.pdf            # 📄 Printable 28-Page OOP Principles PDF
+│   ├── OOP_GUIDE.html           # 🌐 Interactive standalone OOP Guide
 │   ├── Group_39-ProjectReport.pdf # 📄 Final Printable Project Report PDF
 │   ├── Group_39-PPT.pdf         # 📊 Final Printable Presentation Slides PDF
 │   ├── PROJECT_REPORT.md        # 📝 Markdown Project Report
@@ -192,7 +200,7 @@ java -cp out com.orbitalix.app.Main --selftest
 | Team Member | Project Role | Core Responsibilities & Deliverables |
 | :--- | :--- | :--- |
 | **Member A (Bharat)** | Lead Software Architect & Core Engine Developer | • Full Java 17 deterministic simulation engine & clock tick loop (Tasks A1–A7)<br>• 10 Desktop Mission Control cockpit consoles in Swing / Java2D (Tasks A8–A14)<br>• Real-time 3D spacecraft rasterizer with dual-source space lighting<br>• Four-tier autonomous recovery engine (Self-Healing, Autopilot, Crew, Ground)<br>• Automated 108-permutation regression & self-test suite (`--selftest`) (Tasks A15–A16) |
-| **Member B (Kaushal Gond)** | Systems Analyst, QA & Technical Documentation Lead | • System requirements specification & UML modeling (`docs/puml/`) (Tasks B1–B3)<br>• Final Project Report ([`docs/Group_39-ProjectReport.pdf`](docs/Group_39-ProjectReport.pdf))<br>• Project Architecture Presentation Slides ([`docs/Group_39-PPT.pdf`](docs/Group_39-PPT.pdf)) (Tasks B5–B6)<br>• Viva examination Q&A preparation (Appendix C) (Task B7)<br>• Multi-environment verification testing on fresh machine clones (Task B8) |
+| **Member B (Kaushal Gond)** | Systems Analyst, QA & Technical Documentation Lead | • System requirements specification & UML modeling (`docs/puml/`) (Tasks B1–B3)<br>• Flight Operations Manual & User Guide ([`docs/USER_GUIDE.md`](docs/USER_GUIDE.md))<br>• Final Project Report ([`docs/Group_39-ProjectReport.pdf`](docs/Group_39-ProjectReport.pdf))<br>• Project Architecture Presentation Slides ([`docs/Group_39-PPT.pdf`](docs/Group_39-PPT.pdf)) (Tasks B5–B6)<br>• Viva examination Q&A preparation (Appendix C) (Task B7)<br>• Multi-environment verification testing on fresh machine clones (Task B8) |
 
 ---
 
