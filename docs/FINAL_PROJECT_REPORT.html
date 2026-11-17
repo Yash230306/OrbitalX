@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OrbitalX - Academic Project Report</title>
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --surface: #131b2e;
+            --border: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --cyan: #00e5ff;
+            --sky: #38bdf8;
+            --amber: #f59e0b;
+            --emerald: #10b981;
+            --code-bg: #0f172a;
+        }
+        @media print {
+            body { background: #fff !important; color: #111 !important; }
+            .card { border: 1px solid #ccc !important; background: #fafafa !important; }
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.65;
+            color: var(--text-main);
+            background-color: var(--bg);
+            margin: 0;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: var(--surface);
+            padding: 48px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: var(--cyan);
+            font-size: 2.4rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 12px;
+            margin-top: 0;
+        }
+        h2 {
+            color: var(--sky);
+            font-size: 1.6rem;
+            margin-top: 36px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+        h3 {
+            color: var(--amber);
+            font-size: 1.25rem;
+            margin-top: 24px;
+        }
+        p, li {
+            color: var(--text-muted);
+            font-size: 1.02rem;
+        }
+        strong {
+            color: var(--text-main);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95rem;
+        }
+        th, td {
+            padding: 12px 14px;
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+        th {
+            background: #1e293b;
+            color: var(--cyan);
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background: rgba(255,255,255,0.02);
+        }
+        pre, code {
+            background: var(--code-bg);
+            color: #38bdf8;
+            font-family: 'SF Mono', Consolas, Monaco, monospace;
+            border-radius: 4px;
+        }
+        code {
+            padding: 2px 6px;
+            font-size: 0.9em;
+        }
+        pre {
+            padding: 16px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            line-height: 1.45;
+        }
+        pre code {
+            padding: 0;
+            background: none;
+        }
+        blockquote {
+            border-left: 4px solid var(--cyan);
+            margin: 20px 0;
+            padding: 12px 20px;
+            background: rgba(0,229,255,0.05);
+            border-radius: 0 8px 8px 0;
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="orbitalx-space-mission-simulator">OrbitalX: Space Mission Simulator</h1>
+<h2 id="final-academic-project-report-architectural-specification">Final Academic Project Report &amp; Architectural Specification</h2>
+<p><strong>Course</strong>: Object-Oriented Modeling &amp; Design (OOMD) / Software Engineering<br />
+<strong>Project</strong>: OrbitalX — Autonomous Aerospace Flight Simulator &amp; Mission Control Avionics<br />
+<strong>Target Platform</strong>: Pure Java 17 (OpenJDK / LTS) — Zero External Third-Party Dependencies<br />
+<strong>Repository Branch</strong>: <code>a1-a16-work</code><br />
+<strong>Team Structure &amp; Roles</strong>:<br />
+- <strong>Member A</strong>: Lead Avionics Architect, Backend Physics Engine, 3D Graphics &amp; Cockpit Presentation Layer<br />
+- <strong>Member B</strong>: Systems Verification, Clean Machine Testing, UML Domain Modeling, Presentation &amp; Academic Documentation  </p>
+<hr />
+<h2 id="executive-summary-abstract">Executive Summary &amp; Abstract</h2>
+<p>Modern deep-space exploration involves astronomical distances that introduce significant communication latencies (varying from seconds between the Earth and Moon to upwards of 22 minutes between Earth and Mars). Under these physical constraints, traditional ground-in-the-loop mission control becomes unviable during critical flight phases or compound hardware emergencies. When micro-meteoroid hull breaches, thermal runaway, or power bus overcurrents occur, waiting for human commands from ground control inevitably results in catastrophic vehicle loss.</p>
+<p><strong>OrbitalX</strong> is an aerospace flight simulator and mission control desktop avionics application engineered from first principles in pure Java 17. The project achieves two core objectives:
+1. <strong>Engineering Objective</strong>: Provide a deterministic, real-time aerospace simulation environment featuring 10 dedicated cockpit consoles, 60 FPS hardware-accelerated Java2D graphics, dynamic consumable tracking, orbital Keplerian trajectory calculations, and an autonomous 4-tier Chain of Responsibility recovery system.
+2. <strong>Pedagogical &amp; Academic Objective</strong>: Serve as a reference implementation of advanced Object-Oriented Programming (OOP) paradigms, the five SOLID architectural principles, and twelve classical Gang of Four (GoF) design patterns operating in a high-concurrency, mission-critical domain.</p>
+<p>The software was developed with zero external libraries or runtime frameworks, relying exclusively on Java SE 17 standard libraries (<code>java.awt</code>, <code>javax.swing</code>, <code>java.time</code>, <code>java.nio</code>, <code>java.util.concurrent</code>). The system was subjected to an exhaustive automated verification matrix comprising <strong>108 distinct test scenarios</strong> (12 failure scenarios across 3 difficulty levels and 3 autonomy modes), achieving a 100% deterministic survival pass rate in autonomous mode (<code>SELFTEST PASS</code>).</p>
+<hr />
+<h2 id="1-problem-statement-motivation">1. Problem Statement &amp; Motivation</h2>
+<p>Spacecraft are among the most complex distributed machines in existence. Unlike terrestrial vehicles, spacecraft exhibit three severe engineering realities:</p>
+<ol>
+<li><strong>Extreme Communication Latency</strong>: Radio signals travel at the speed of light ($c \approx 3 \times 10^8 \text{ m/s}$). For interplanetary missions to Mars, Jupiter, or Lagrange points, telemetry packets and commands suffer round-trip latencies of 6 to 44 minutes. Ground operators cannot manually throttle back an overheating reactor or seal a venting oxygen valve in time.</li>
+<li><strong>Cascading Subsystem Interdependence</strong>: Spacecraft subsystems are tightly coupled through physical resources. A partial solar array failure causes bus voltage drops, forcing batteries to discharge rapidly, which trips coolant circulation pumps, causing reactor temperatures to surge and triggering emergency engine shutdown. Without intelligent isolation, minor anomalies compound into fatal failures within seconds.</li>
+<li><strong>Crew Cognitive Saturation</strong>: In high-stress flight regimes, human astronauts face sensory and cognitive overload when dozens of emergency alarms chime simultaneously.</li>
+</ol>
+<p><strong>The Solution in OrbitalX</strong>: An autonomous, on-board flight autonomy controller governed by a cascading Chain of Responsibility:
+- <strong>Tier 1 (Local Self-Healing)</strong>: Subsystem-level hardware reflexes.
+- <strong>Tier 2 (Timed Autopilot)</strong>: Rule-based anomaly detection with countdown timers allowing pilot override.
+- <strong>Tier 3 (Crew Intervention)</strong>: Specialized crew members assigned to manual task remediation with skill bonuses.
+- <strong>Tier 4 (Ground Control Uplink)</strong>: Deferred command execution modeling astronomical radio lag.</p>
+<hr />
+<h2 id="2-high-level-system-architecture">2. High-Level System Architecture</h2>
+<p>OrbitalX is architected with a decoupled three-tier boundary, ensuring total isolation between the user interface, public control contracts, and the physics simulation kernel.</p>
+<pre><code>+-------------------------------------------------------------------------+
+|                         PRESENTATION LAYER (GUI)                        |
+|   MainWindow | ViewRegistry | 10 Cockpit Views (Dashboard, Cutaway, Orbit)|
++------------------------------------+------------------------------------+
+                                     |
+                                     | Consumes immutable SimulationSnapshot
+                                     v
++-------------------------------------------------------------------------+
+|                       PUBLIC CONTROLLER INTERFACE                       |
+|         SimulationController (Interface) &lt;--- SimulationSnapshot        |
++------------------------------------+------------------------------------+
+                                     |
+                                     | Dispatches Intent &amp; Steps Ticks
+                                     v
++-------------------------------------------------------------------------+
+|                  AVIONICS SIMULATION ENGINE (BACKEND)                   |
+|   SimulationEngine | Spacecraft | Subsystems | Resources | Sensors      |
+|   DetectionEngine  | AdvisorEngine | AutopilotController | EventBus     |
++-------------------------------------------------------------------------+
+</code></pre>
+<h3 id="architectural-tier-decomposition">Architectural Tier Decomposition:</h3>
+<ol>
+<li><strong>Presentation Layer (<code>com.orbitalix.gui</code>)</strong>:
+   Contains 10 independent view modules registered in <code>ViewRegistry</code>. Every view extends <code>View</code> or <code>MissionView</code>. Views never directly invoke simulation physics or read mutable spacecraft references; they render solely from immutable telemetry snapshots published on the Swing Event Dispatch Thread (EDT).</li>
+<li><strong>Public Boundary API (<code>com.orbitalix.api</code>)</strong>:
+   Declares the <code>SimulationController</code> interface and <code>SimulationSnapshot</code> (a Java 17 immutable record). This boundary decouples the GUI from the engine, allowing the simulation to execute in headless mode (<code>--selftest</code> or CLI) without loading Swing classes.</li>
+<li><strong>Avionics &amp; Physics Core (<code>com.orbitalix.simulation</code>, <code>model</code>, <code>subsystem</code>, <code>autonomy</code>)</strong>:
+   Encapsulates the numerical integration loop, resource conservation, sensor noise injection, telemetry anomaly detection, and the autonomous recovery pipeline.</li>
+</ol>
+<hr />
+<h2 id="3-core-object-oriented-programming-oop-pillars">3. Core Object-Oriented Programming (OOP) Pillars</h2>
+<p>OrbitalX applies the four classical OOP pillars systematically:</p>
+<h3 id="31-strict-encapsulation-defensive-design">3.1 Strict Encapsulation &amp; Defensive Design</h3>
+<ul>
+<li><strong>State Invariance</strong>: All critical flight metrics (<code>fuelMass</code>, <code>batteryChargeJoules</code>, <code>cabinPressureKPa</code>, <code>coreTemperatureKelvin</code>) are declared <code>private</code> or <code>protected</code>. State mutations are only possible through validated domain methods enforcing physical boundary limits $[0, \text{capacity}]$.</li>
+<li><strong>Immutable Public Telemetry</strong>: Telemetry is exposed across threads through Java 17 Records (<code>SimulationSnapshot</code>). Because records are shallowly and structurally immutable, concurrent UI rendering threads cannot corrupt or observe inconsistent mid-tick simulation state.</li>
+<li><strong>Defensive Copying</strong>: Collections returned by domain entities (such as active sensors or crew lists) are wrapped in <code>Collections.unmodifiableList(...)</code> to prevent unauthorized external additions or deletions.</li>
+</ul>
+<h3 id="32-abstraction">3.2 Abstraction</h3>
+<ul>
+<li><strong><code>SystemComponent</code> Contract</strong>: Unifies all spacecraft elements (Subsystems, Consumable Resources, Crew Members) under a common lifecycle and status reporting contract:
+  <code>java
+  public interface SystemComponent {
+      String getName();
+      ComponentStatus getStatus();
+      double getPowerDrawWatts();
+      void update(double deltaSeconds);
+  }</code></li>
+<li><strong>Sensor Abstraction (<code>Sensor</code> &amp; <code>BaseSensor</code>)</strong>: Hides internal noise models, temperature drift, and analog-to-digital conversion behind a simple double read method: <code>double readValue()</code>.</li>
+</ul>
+<h3 id="33-inheritance-hierarchy">3.3 Inheritance Hierarchy</h3>
+<p>Inheritance is applied purposefully with shallow depth (maximum 2–3 levels) to share common behavior while delegating specialized responsibilities:
+- <code>Subsystem</code> (Abstract Base) $\rightarrow$ <code>PropulsionSubsystem</code>, <code>PowerSubsystem</code>, <code>LifeSupportSubsystem</code>, <code>ThermalSubsystem</code>, <code>AvionicsSubsystem</code>, <code>CommunicationSubsystem</code>.
+- <code>BaseSensor</code> (Abstract Base) $\rightarrow$ <code>GyroSensor</code>, <code>TemperatureSensor</code>, <code>VoltageSensor</code>.
+- <code>CrewMember</code> (Abstract Base) $\rightarrow$ <code>Commander</code>, <code>Pilot</code>, <code>FlightEngineer</code>, <code>MedicalOfficer</code>.
+- <code>ResponseHandler</code> (Abstract Base) $\rightarrow$ <code>SelfHealingHandler</code>, <code>AutopilotHandler</code>, <code>CrewHandler</code>, <code>EscalationHandler</code>.</p>
+<h3 id="34-polymorphism-dynamic-method-dispatch">3.4 Polymorphism &amp; Dynamic Method Dispatch</h3>
+<p>Polymorphism is fundamental to how OrbitalX executes physics and autonomous recovery:
+1. <strong>Subsystem Physics Dynamic Dispatch</strong>:
+   <code>java
+   for (Subsystem subsystem : spacecraft.getSubsystems()) {
+       subsystem.applyPhysics(deltaSeconds); // Dynamically dispatched
+   }</code>
+   The engine treats all subsystems uniformly. <code>PropulsionSubsystem</code> calculates Tsiolkovsky rocket equation mass depletion; <code>ThermalSubsystem</code> applies Stefan-Boltzmann radiative cooling; <code>LifeSupportSubsystem</code> computes human metabolic $O_2$ consumption.
+2. <strong>Command Execution Polymorphism</strong>:
+   <code>CorrectiveAction.execute(Spacecraft craft)</code> executes varying recovery sequences dynamically, whether it is <code>ReroutePowerAction</code>, <code>VentCoolantAction</code>, or <code>SwitchToBackupGyroAction</code>.</p>
+<hr />
+<h2 id="4-solid-design-principles-implementation">4. SOLID Design Principles Implementation</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Principle</th>
+<th style="text-align: left;">OrbitalX Implementation &amp; Architectural Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Single Responsibility Principle (SRP)</strong></td>
+<td style="text-align: left;">Every package and class has a single, well-defined mandate. <code>SimulationEngine</code> only advances physics time; <code>DetectionEngine</code> only evaluates anomalies; <code>AdvisorEngine</code> only formulates remediation rules; <code>ViewRegistry</code> only manages UI view instances.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Open/Closed Principle (OCP)</strong></td>
+<td style="text-align: left;">The fault injection engine is open for new anomalies without modifying core simulation loops. New hazards subclass <code>Fault</code> and register with <code>FaultFactory</code>. New views implement <code>View</code> and register with <code>ViewRegistry</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Liskov Substitution Principle (LSP)</strong></td>
+<td style="text-align: left;">Any subclass of <code>Subsystem</code> can substitute for <code>Subsystem</code> without breaking engine invariants. Every <code>Sensor</code> conforms strictly to the <code>Sensor</code> interface without throwing unexpected unsupported exceptions.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Interface Segregation Principle (ISP)</strong></td>
+<td style="text-align: left;">Broad, bloated interfaces were avoided. Instead of a single monolithic controller, capabilities are segregated into targeted interfaces: <code>SimulationController</code>, <code>AnomalyDetector</code>, <code>CorrectiveAction</code>, <code>ReportVisitor</code>, <code>MissionEventListener</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Dependency Inversion Principle (DIP)</strong></td>
+<td style="text-align: left;">High-level presentation components do not depend on low-level engine details. Both depend on the abstract <code>SimulationController</code> interface. The engine can run headless in <code>--selftest</code> with zero Swing references.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-classical-gang-of-four-gof-design-patterns">5. Classical Gang of Four (GoF) Design Patterns</h2>
+<p>OrbitalX incorporates 12 classical GoF design patterns:</p>
+<h3 id="1-state-pattern-spacecraftstatus">1. State Pattern (<code>SpacecraftStatus</code>)</h3>
+<p>The spacecraft transitions through operational states: <code>NOMINAL</code>, <code>DEGRADED</code>, <code>CRITICAL</code>, <code>SAFE_MODE</code>, <code>TERMINAL_LOSS</code>. State transitions automatically adjust throttle thresholds, power distribution policies, and annunciator matrix alarm visualizers.</p>
+<h3 id="2-command-pattern-correctiveaction">2. Command Pattern (<code>CorrectiveAction</code>)</h3>
+<p>Encapsulates flight recovery operations as objects:</p>
+<pre><code class="language-java">public interface CorrectiveAction {
+    String getActionId();
+    String getDescription();
+    ActionResult execute(Spacecraft spacecraft);
+}
+</code></pre>
+<p>Concrete commands (<code>ReroutePowerAction</code>, <code>VentCoolantAction</code>, <code>SwitchToBackupGyroAction</code>, <code>PatchHullBreachAction</code>) allow queuing, scheduling, undo, and timed pilot countdowns.</p>
+<h3 id="3-observer-pattern-eventbus">3. Observer Pattern (<code>EventBus</code>)</h3>
+<p>A strongly-typed, thread-safe publish-subscribe message bus utilizing <code>Topic&lt;T&gt;</code>. When an anomaly or state change occurs, <code>EventBus</code> broadcasts events (<code>FaultDetectedEvent</code>, <code>MissionStatusEvent</code>, <code>AutopilotEngagedEvent</code>) to decoupled listeners, updating sound synthesizers, loggers, and cockpit annunciators simultaneously.</p>
+<h3 id="4-chain-of-responsibility-responsehandler">4. Chain of Responsibility (<code>ResponseHandler</code>)</h3>
+<p>Orchestrates autonomous fault handling through a cascading handler chain:
+$$\text{SelfHealingHandler} \longrightarrow \text{AutopilotHandler} \longrightarrow \text{CrewHandler} \longrightarrow \text{EscalationHandler}$$
+Each handler either resolves the issue or propagates it down the line.</p>
+<h3 id="5-memento-pattern-historyjava">5. Memento Pattern (<code>History.java</code>)</h3>
+<p>Captures periodic, immutable snapshots of spacecraft state throughout flight. Powers the Time-Travel Replay console, allowing operators to scrub forward and backward through mission time to diagnose the root cause of failures.</p>
+<h3 id="6-factory-method-faultfactory">6. Factory Method (<code>FaultFactory</code>)</h3>
+<p>Instantiates concrete <code>Fault</code> subclasses (<code>FuelLeakFault</code>, <code>SolarStormFault</code>, <code>GyroDriftFault</code>, <code>HullBreachFault</code>) based on enumeration keys, isolating hazard generation from the simulation core.</p>
+<h3 id="7-strategy-pattern-anomalydetector-radiochannel">7. Strategy Pattern (<code>AnomalyDetector</code> &amp; <code>RadioChannel</code>)</h3>
+<ul>
+<li><strong>Detection Strategies</strong>: <code>ThresholdDetector</code>, <code>RateOfChangeDetector</code>, and <code>ZScoreDetector</code> implement swappable algorithms for inspecting telemetry.</li>
+<li><strong>Communication Strategies</strong>: <code>DirectUplinkChannel</code> (instant) vs <code>DelayedRadioChannel</code> (speed-of-light queue).</li>
+</ul>
+<h3 id="8-visitor-pattern-reportvisitor">8. Visitor Pattern (<code>ReportVisitor</code>)</h3>
+<p>Separates flight report generation algorithms from telemetry data structures. <code>HtmlReportVisitor</code> and <code>TextReportVisitor</code> traverse <code>MissionReport</code> nodes to generate comprehensive post-flight debrief documents.</p>
+<h3 id="9-composite-pattern-spacecraft-component-tree">9. Composite Pattern (<code>Spacecraft</code> Component Tree)</h3>
+<p><code>Spacecraft</code> aggregates multiple <code>Subsystem</code>s, which aggregate multiple <code>Sensor</code>s and <code>Resource</code>s. Because all implement <code>SystemComponent</code>, tree-wide queries (such as total vehicle power draw) execute recursively.</p>
+<h3 id="10-decorator-pattern-calibratedsensordecorator">10. Decorator Pattern (<code>CalibratedSensorDecorator</code>)</h3>
+<p>Wraps raw <code>Sensor</code> instances with calibration curves, thermal noise compensation, and unit conversion filters without altering base sensor logic.</p>
+<h3 id="11-mediator-pattern-eventbus-mainwindow">11. Mediator Pattern (<code>EventBus</code> &amp; <code>MainWindow</code>)</h3>
+<p>Centralizes cross-console interactions so that individual views (e.g., <code>OrbitView</code> and <code>DashboardView</code>) do not directly hold references to one another.</p>
+<h3 id="12-singleton-registry-pattern-viewregistry">12. Singleton / Registry Pattern (<code>ViewRegistry</code>)</h3>
+<p>Provides a managed registry for UI console lifecycle, preventing duplicate view allocations and supporting dynamic theme switching.</p>
+<hr />
+<h2 id="6-autonomous-recovery-engine-deep-dive">6. Autonomous Recovery Engine Deep Dive</h2>
+<p>The core innovation of OrbitalX is its multi-stage autonomous recovery architecture.</p>
+<pre><code>       [ Telemetry Stream ]
+                 |
+                 v
+      +---------------------+
+      |   DetectionEngine   | ===&gt; [ Threshold | Rate-of-Change | Z-Score ]
+      +----------+----------+
+                 | Anomalies Flagged
+                 v
+      +---------------------+
+      |    AdvisorEngine    | ===&gt; Rule Matching &amp; Recommendation Queue
+      +----------+----------+
+                 | Prioritized CorrectiveAction
+                 v
+   +-------------------------------------------------------------+
+   |             CHAIN OF RESPONSIBILITY PIPELINE                |
+   |                                                             |
+   |  [ Tier 1: Local Self-Healing ]                             |
+   |     | (Unresolved)                                          |
+   |     v                                                       |
+   |  [ Tier 2: Timed Autopilot ] (Countdown &amp; Pilot Override)   |
+   |     | (Unresolved / Manual Required)                        |
+   |     v                                                       |
+   |  [ Tier 3: Crew Intervention ] (Role Skill Multipliers)     |
+   |     | (Unresolved / Beyond Crew Capacity)                   |
+   |     v                                                       |
+   |  [ Tier 4: Ground Control Uplink ] (Speed-of-Light Latency) |
+   +-------------------------------------------------------------+
+</code></pre>
+<h3 id="anomaly-detection-heuristics">Anomaly Detection Heuristics:</h3>
+<ol>
+<li><strong>Threshold Detection</strong>: Compares raw telemetry values against hard limits:
+   $$\text{Anomaly if } x(t) &gt; x_{\text{max}} \quad \text{or} \quad x(t) &lt; x_{\text{min}}$$</li>
+<li><strong>Rate of Change ($dV/dt$) Detection</strong>: Calculates the numerical first derivative across a rolling sampling window:
+   $$\frac{\Delta V}{\Delta t} = \frac{x(t) - x(t - \Delta t)}{\Delta t}$$
+   Detects micro-punctures and slow fuel leaks before critical thresholds are reached.</li>
+<li><strong>Z-Score Statistical Detection</strong>: Identifies sensor anomalies and noise spikes:
+   $$Z = \frac{|x(t) - \mu|}{\sigma}$$
+   Flags readings where $Z &gt; 3.0$ standard deviations, isolating transient electrical noise from genuine mechanical degradation.</li>
+</ol>
+<hr />
+<h2 id="7-cockpit-consoles-user-interface">7. Cockpit Consoles &amp; User Interface</h2>
+<p>OrbitalX features <strong>10 fully interactive cockpit consoles</strong> rendered using hardware-accelerated Java2D:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Screen #</th>
+<th style="text-align: left;">Console Name</th>
+<th style="text-align: left;">Primary Function &amp; Visual Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><strong>1</strong></td>
+<td style="text-align: left;"><strong>Flight Dashboard</strong></td>
+<td style="text-align: left;">Primary cockpit view with circular dials (Speed, Alt, Fuel, Battery, $O_2$, Temp), annunciator alarm matrix, throttle slider, and RCS controls. <em>(Ref: <code>docs/screenshots/11_dashboard.png</code>)</em></td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>2</strong></td>
+<td style="text-align: left;"><strong>3D Spacecraft Cutaway</strong></td>
+<td style="text-align: left;">Isometric wireframe view displaying internal compartments (Command, Reactor, Fuel Bunkers, Thrusters), real-time heatmaps, and particle exhaust plumes. <em>(Ref: <code>docs/screenshots/12_cutaway_3d.png</code>)</em></td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>3</strong></td>
+<td style="text-align: left;"><strong>Orbit &amp; Ground Track Map</strong></td>
+<td style="text-align: left;">Keplerian orbital projection showing Apoapsis, Periapsis, eccentricity, planetary ground track, and ground station LOS coverage. <em>(Ref: <code>docs/screenshots/09_orbit_ground_track_radar.png</code>)</em></td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>4</strong></td>
+<td style="text-align: left;"><strong>Systems Topology Tree</strong></td>
+<td style="text-align: left;">Component tree view displaying live bus voltages, power draw, temperature, and fault status across all subsystems. <em>(Ref: <code>docs/screenshots/13_systems.png</code>)</em></td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>5</strong></td>
+<td style="text-align: left;"><strong>Crew Quarters</strong></td>
+<td style="text-align: left;">Crew vitals monitor (heart rate, stress, fatigue) and manual emergency task dispatch for Commander, Engineer, Pilot, Medic. <em>(Ref: <code>docs/screenshots/14_crew.png</code>)</em></td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>6</strong></td>
+<td style="text-align: left;"><strong>Flight Planner</strong></td>
+<td style="text-align: left;">Pre-flight mission configurator for setting target destination, payload mass, fuel budgets, and initial trajectory parameters. <em>(Ref: <code>docs/screenshots/10_planner.png</code>)</em></td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>7</strong></td>
+<td style="text-align: left;"><strong>Time-Travel Replay</strong></td>
+<td style="text-align: left;">Memento-driven scrubbing console enabling frame-by-frame forward/backward flight replay and incident analysis. <em>(Ref: <code>docs/screenshots/15_replay.png</code>)</em></td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>8</strong></td>
+<td style="text-align: left;"><strong>Avionics Terminal</strong></td>
+<td style="text-align: left;">Command-line interface console allowing direct low-level diagnostic command execution and manual subsystem overrides.</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>9</strong></td>
+<td style="text-align: left;"><strong>Mission Reports</strong></td>
+<td style="text-align: left;">Visitor-generated flight report console providing mission timeline debriefs, fuel efficiency curves, and fault logs. <em>(Ref: <code>docs/screenshots/16_reports.png</code>)</em></td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>10</strong></td>
+<td style="text-align: left;"><strong>Settings &amp; Theme Customizer</strong></td>
+<td style="text-align: left;">Allows real-time switching between High-Contrast Dark Cockpit, Retro Amber Phosphor, and Technical Blue UI themes.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-verification-secondary-machine-testing">8. Verification &amp; Secondary Machine Testing</h2>
+<h3 id="81-headless-self-test-matrix-architecture">8.1 Headless Self-Test Matrix Architecture</h3>
+<p>To verify determinism and autonomous survivability, OrbitalX includes an automated headless verification suite executed via:</p>
+<pre><code class="language-bash">java -cp out com.orbitalix.app.Main --selftest
+</code></pre>
+<p>The test suite executes a full combinatorial matrix:
+$$\text{12 Failure Scenarios} \times \text{3 Difficulty Tiers (EASY, NORMAL, HARD)} \times \text{3 Autonomy Modes} = \mathbf{108 \text{ Mission Scenarios}}$$</p>
+<h3 id="82-test-matrix-findings-analysis">8.2 Test Matrix Findings &amp; Analysis:</h3>
+<ul>
+<li><strong>Under <code>MANUAL</code> Mode (Unattended Headless Execution)</strong>:
+  Lethal emergencies inevitably exhaust craft survivability margins:</li>
+<li><code>Fuel Leak</code> $\rightarrow$ <code>LOST - FUEL EXHAUSTED</code> (Tick 84)</li>
+<li><code>Hull Breach</code> $\rightarrow$ <code>LOST - LIFE SUPPORT</code> (Tick 119)</li>
+<li><code>Cascading Failure</code> $\rightarrow$ <code>LOST - FUEL EXHAUSTED</code> (Tick 81)
+  This empirically verifies that faults are genuinely lethal and require remediation.</li>
+<li><strong>Under <code>TIMED_AUTOPILOT</code> &amp; <code>FULL_AUTO</code> Modes</strong>:
+  The 4-tier autonomy chain successfully detects, isolates, and remediates all hazards. In every scenario across all difficulties, the spacecraft successfully reaches its target destination with positive fuel margins:</li>
+<li><code>Fuel Leak (HARD)</code> $\rightarrow$ <code>SUCCESS - DESTINATION REACHED</code> (Fuel Remaining: 3.4%)</li>
+<li><code>Hull Breach (HARD)</code> $\rightarrow$ <code>SUCCESS - DESTINATION REACHED</code> (Fuel Remaining: 6.5%)</li>
+<li><code>Cascading Failure (NORMAL)</code> $\rightarrow$ <code>SUCCESS - DESTINATION REACHED</code> (Fuel Remaining: 4.9%)</li>
+</ul>
+<h3 id="83-clean-machine-verification-member-b">8.3 Clean Machine Verification (Member B):</h3>
+<p>Member B independently set up the project on a clean secondary machine (macOS / Temurin OpenJDK 27), executed compilation via <code>compile.sh</code>, and ran the self-test suite.
+- <strong>Result</strong>: <code>SELFTEST PASS (determinism and survival checks)</code>
+- <strong>Execution Errors</strong>: 0 (Zero NullPointerExceptions, Zero thread deadlocks, Zero memory leaks).</p>
+<hr />
+<h2 id="9-engineering-challenges-solutions">9. Engineering Challenges &amp; Solutions</h2>
+<ol>
+<li><strong>Fixed-Timestep Numerical Integration</strong>:
+   <em>Challenge</em>: Swing animation timers produce variable frame deltas, leading to numerical drift in orbital position calculations.<br />
+<em>Solution</em>: Physics simulation is completely decoupled from rendering. The engine updates with a fixed $\Delta t = 0.05\text{ s}$, ensuring identical simulation results across different hardware.</li>
+<li><strong>Concurrency &amp; Thread Safety</strong>:
+   <em>Challenge</em>: Preventing race conditions between background simulation threads and the Swing Event Dispatch Thread (EDT).<br />
+<em>Solution</em>: State is never shared mutably. The simulation thread produces immutable <code>SimulationSnapshot</code> records, which are dispatched safely to the EDT via <code>SwingUtilities.invokeLater</code>.</li>
+<li><strong>Zero Third-Party Dependency Constraint</strong>:
+   <em>Challenge</em>: Rendering 3D isometric cutaways, sound synthesis, and telemetry plots without external libraries (like JFreeChart, LibGDX, or JavaFX).<br />
+<em>Solution</em>: Engineered custom Java2D vector projection math, a software particle emitter, and a dynamic audio tone synthesizer using Java's built-in <code>javax.sound.sampled</code> package.</li>
+</ol>
+<hr />
+<h2 id="10-division-of-work-deliverables">10. Division of Work &amp; Deliverables</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Team Member</th>
+<th style="text-align: left;">Core Responsibilities &amp; Contributions</th>
+<th style="text-align: left;">Deliverables Produced</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Member A</strong></td>
+<td style="text-align: left;">• Lead Avionics &amp; Simulation Physics Architecture<br>• Core Subsystem &amp; Resource Mathematical Modeling<br>• 10 Cockpit Swing / Java2D HUD Consoles<br>• Anomaly Detection &amp; Rule Recommendation Engine<br>• 3D Isometric Spacecraft Cutaway Visualizer</td>
+<td style="text-align: left;">• <code>src/main/java/</code> Core Implementation<br>• Headless <code>--selftest</code> Runner<br>• Initial Technical Guides &amp; PUML Specs</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Member B</strong></td>
+<td style="text-align: left;">• Secondary Clean Machine Verification &amp; Testing<br>• PlantUML Architectural Diagram Rendering (PNG)<br>• Final Comprehensive Academic Project Report<br>• 18-Slide Professional Viva Presentation (<code>.pptx</code>)<br>• Executive Viva Q&amp;A &amp; Architectural Cheat Sheet<br>• Git Repository Maintenance &amp; Release Staging</td>
+<td style="text-align: left;">• <code>docs/FINAL_PROJECT_REPORT.md</code><br>• <code>docs/OrbitalX_Presentation.pptx</code><br>• <code>docs/VIVA_QA_CHEAT_SHEET.md</code><br>• <code>docs/puml/*.png</code> (Rendered Diagrams)<br>• Independent Verification Logs</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="11-conclusion">11. Conclusion</h2>
+<p>OrbitalX demonstrates that enterprise-grade Object-Oriented software engineering principles, when rigorously applied, can model complex, high-concurrency aerospace systems without relying on bloated external dependencies. The decoupled 3-tier architecture, comprehensive application of 12 GoF design patterns, and the robust 4-tier autonomous recovery chain provide a resilient foundation for simulated deep-space flight. The complete deliverables package—including the running application, full test suite, UML specifications, presentation slides, and academic report—is fully validated and prepared for formal defense.</p>
+    </div>
+</body>
+</html>
