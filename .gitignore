@@ -9,3 +9,7 @@ logs/
 *.iml
 Thumbs.db
 .DS_Store
+*.zip
+Group_39.zip
+Group_39-SourceCode.zip
+
